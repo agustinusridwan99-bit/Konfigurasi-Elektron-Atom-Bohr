@@ -3,747 +3,650 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>GrowChem - Teori Asam Basa</title>
+<title>Atom Builder - Konfigurasi Elektron Bohr</title>
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
-  body {
-    background: linear-gradient(160deg, #1a3a1a 0%, #0a1f0a 100%);
-    min-height: 100vh;
-    display: flex; justify-content: center; align-items: center;
-    padding: 8px;
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body { width:100%; height:100%; overflow:hidden; font-family:'Segoe UI',Roboto,sans-serif; background:#05060f; color:#e6f1ff; }
+  #app { position:relative; width:100%; height:100%; display:flex; flex-direction:column; }
+
+  /* ===== WebGL Canvas ===== */
+  #glCanvas { position:absolute; inset:0; z-index:0; }
+
+  /* ===== Overlay UI ===== */
+  .ui { position:relative; z-index:10; pointer-events:none; }
+  .ui > * { pointer-events:auto; }
+
+  /* ===== Header ===== */
+  #header {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:10px 14px; background:rgba(8,14,30,0.75);
+    backdrop-filter:blur(8px); border-bottom:1px solid rgba(0,180,255,0.25);
+    font-size:13px;
   }
-  .app {
-    width: 100%; max-width: 420px; height: 98vh; max-height: 850px;
-    background: #f5f9f0;
-    border-radius: 30px;
-    overflow: hidden;
-    display: flex; flex-direction: column;
-    box-shadow: 0 20px 50px rgba(0,0,0,0.7), 0 0 0 2px #6b8c5c;
-    position: relative;
+  #header .user { display:flex; align-items:center; gap:8px; }
+  #header .avatar {
+    width:30px; height:30px; border-radius:50%;
+    background:linear-gradient(135deg,#00d4ff,#7b2ff7);
+    display:flex; align-items:center; justify-content:center;
+    font-weight:bold; font-size:13px;
   }
-  .screen { flex: 1; display: none; flex-direction: column; padding: 16px; overflow-y: auto; }
-  .screen.active { display: flex; }
-  h2 { color: #2b4f1e; font-size: 1.6rem; text-align: center; margin-bottom: 4px; }
-  .sub { text-align: center; color: #4a6b3a; font-size: 0.85rem; margin-bottom: 14px; }
-  .card {
-    background: #fff;
-    border-radius: 22px;
-    padding: 18px 16px;
-    box-shadow: 0 4px 14px rgba(0,0,0,0.08);
-    border: 1px solid #d8e8cc;
+  #header .stats { display:flex; gap:12px; }
+  #header .stats span { color:#00d4ff; font-weight:700; }
+  .btn-logout {
+    background:transparent; border:1px solid rgba(255,80,80,0.5);
+    color:#ff6b6b; border-radius:8px; padding:5px 10px; font-size:11px;
+    cursor:pointer;
   }
-  input {
-    width: 100%; padding: 13px 16px;
-    border: 1.5px solid #b8d4a8; border-radius: 40px;
-    font-size: 1rem; margin-bottom: 10px; outline: none; background: #fefefe;
+
+  /* ===== Main Content ===== */
+  #main { flex:1; display:flex; flex-direction:column; justify-content:space-between; }
+
+  /* ===== Atom Info Panel ===== */
+  #atomPanel {
+    margin:10px 14px 0; padding:10px 14px;
+    background:rgba(8,14,30,0.7); backdrop-filter:blur(8px);
+    border:1px solid rgba(0,180,255,0.25); border-radius:14px;
+    font-size:12px;
   }
-  input:focus { border-color: #4caf50; box-shadow: 0 0 0 3px rgba(76,175,80,0.2); }
-  button {
-    width: 100%; padding: 13px;
-    border: none; border-radius: 40px;
-    background: #2e7d32; color: #fff;
-    font-size: 1rem; font-weight: 600;
-    cursor: pointer;
-    box-shadow: 0 4px 0 #1b5e20;
-    transition: 0.1s;
+  #atomPanel .row { display:flex; justify-content:space-between; margin-bottom:4px; }
+  #atomPanel .label { color:#8aa8c8; }
+  #atomPanel .value { color:#00e5ff; font-weight:700; }
+  #shells { display:flex; gap:8px; margin-top:6px; flex-wrap:wrap; }
+  .shell-chip {
+    padding:3px 9px; border-radius:20px; font-size:11px; font-weight:700;
+    background:rgba(0,180,255,0.12); border:1px solid rgba(0,180,255,0.4);
+    color:#7fd6ff;
   }
-  button:active { transform: translateY(3px); box-shadow: 0 1px 0 #1b5e20; }
-  button.secondary { background: #7e9f6e; box-shadow: 0 4px 0 #4a6b3a; }
-  button:disabled { opacity: 0.6; cursor: not-allowed; }
-  .msg { text-align: center; font-size: 0.8rem; min-height: 18px; margin-top: 6px; color: #b71c1c; }
-  .topbar {
-    display: flex; justify-content: space-between; align-items: center;
-    background: #2e4d1e; color: #e8f5e0;
-    padding: 10px 14px; border-radius: 40px;
-    font-size: 0.85rem; font-weight: 500;
-    margin-bottom: 12px;
+  .shell-chip.full { background:rgba(0,255,150,0.15); border-color:#00ffa3; color:#00ffa3; }
+
+  /* ===== Question Card ===== */
+  #quizArea { padding:0 14px; }
+  #questionCard {
+    background:rgba(10,18,38,0.85); backdrop-filter:blur(10px);
+    border:1px solid rgba(0,180,255,0.3); border-radius:16px;
+    padding:14px; margin-bottom:10px;
+    box-shadow:0 8px 30px rgba(0,120,255,0.15);
   }
-  .topbar span { background: #1e3a12; padding: 5px 12px; border-radius: 30px; }
-  #canvas-box {
-    width: 100%; height: 190px;
-    background: #cfe9c4; border-radius: 22px;
-    overflow: hidden; margin-bottom: 10px;
-    box-shadow: inset 0 4px 12px rgba(0,0,0,0.1);
-    flex-shrink: 0;
+  #qProgress { font-size:11px; color:#8aa8c8; margin-bottom:6px; }
+  #qText { font-size:14px; line-height:1.45; margin-bottom:12px; font-weight:600; }
+  #options { display:flex; flex-direction:column; gap:8px; }
+  .option {
+    background:rgba(0,180,255,0.08); border:1px solid rgba(0,180,255,0.3);
+    color:#d0e8ff; border-radius:10px; padding:11px 13px; font-size:13px;
+    text-align:left; cursor:pointer; transition:all .2s;
+    display:flex; align-items:center; gap:10px;
   }
-  #canvas-box canvas { display: block; width: 100%; height: 100%; }
-  .progress {
-    background: #eef6e8; border-radius: 40px;
-    padding: 8px 14px; text-align: center;
-    font-size: 0.8rem; font-weight: 600; color: #2b4f1e;
-    margin-bottom: 10px;
+  .option .key {
+    width:22px; height:22px; border-radius:50%; flex-shrink:0;
+    background:rgba(0,180,255,0.2); display:flex; align-items:center;
+    justify-content:center; font-weight:700; font-size:11px;
   }
-  .question {
-    font-size: 0.98rem; font-weight: 500; color: #1e3a12;
-    line-height: 1.45; margin-bottom: 12px; min-height: 64px;
+  .option:active { transform:scale(0.98); }
+  .option.correct { background:rgba(0,255,150,0.2); border-color:#00ffa3; color:#00ffa3; }
+  .option.wrong { background:rgba(255,60,60,0.2); border-color:#ff4d4d; color:#ff6b6b; }
+  .option:disabled { opacity:0.6; }
+
+  /* ===== Feedback ===== */
+  #feedback {
+    text-align:center; font-size:13px; font-weight:700; padding:6px;
+    border-radius:10px; margin-top:8px; display:none;
   }
-  .options { display: flex; flex-direction: column; gap: 8px; }
-  .option-btn {
-    background: #fff; border: 1.5px solid #cfe2c4;
-    border-radius: 14px; padding: 12px 14px;
-    text-align: left; font-size: 0.9rem; font-weight: 500;
-    color: #1e3a12; cursor: pointer; transition: 0.1s;
-    box-shadow: 0 2px 0 #d0e0c8;
+  #feedback.ok { display:block; color:#00ffa3; }
+  #feedback.bad { display:block; color:#ff6b6b; }
+
+  /* ===== Bottom Bar ===== */
+  #bottomBar {
+    display:flex; gap:10px; padding:10px 14px 14px;
+    align-items:center;
   }
-  .option-btn:active { transform: translateY(2px); box-shadow: none; }
-  .option-btn.correct { background: #c8e6c9; border-color: #2e7d32; }
-  .option-btn.wrong { background: #ffcdd2; border-color: #b71c1c; }
-  .option-btn:disabled { cursor: default; }
-  .badge-wrap { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin: 8px 0; }
-  .badge {
-    background: #ffd54f; color: #3e2c00;
-    padding: 7px 12px; border-radius: 30px;
-    font-size: 0.75rem; font-weight: 700;
-    box-shadow: 0 3px 0 #c49b00;
-    display: inline-flex; align-items: center; gap: 4px;
+  .btn {
+    flex:1; padding:12px; border-radius:12px; font-size:13px; font-weight:700;
+    border:none; cursor:pointer; transition:all .2s; text-align:center;
   }
-  .empty-badge { color: #8aa87c; font-size: 0.8rem; font-style: italic; }
-  .lb-list { list-style: none; margin-top: 8px; }
+  .btn-primary {
+    background:linear-gradient(135deg,#00b4ff,#7b2ff7); color:#fff;
+  }
+  .btn-primary:active { transform:scale(0.97); }
+  .btn-primary:disabled { opacity:0.4; }
+  .btn-ghost {
+    background:rgba(0,180,255,0.1); border:1px solid rgba(0,180,255,0.4);
+    color:#7fd6ff; flex:0 0 auto; padding:12px 16px;
+  }
+
+  /* ===== Modals ===== */
+  .modal {
+    position:fixed; inset:0; z-index:100; display:none;
+    align-items:center; justify-content:center;
+    background:rgba(2,4,12,0.85); backdrop-filter:blur(6px); padding:20px;
+  }
+  .modal.active { display:flex; }
+  .modal-box {
+    width:100%; max-width:380px; background:rgba(10,18,38,0.98);
+    border:1px solid rgba(0,180,255,0.35); border-radius:20px;
+    padding:24px; text-align:center;
+    box-shadow:0 20px 60px rgba(0,120,255,0.3);
+    max-height:90vh; overflow-y:auto;
+  }
+  .modal-box h2 { font-size:19px; margin-bottom:6px; color:#00e5ff; }
+  .modal-box p { font-size:12px; color:#8aa8c8; margin-bottom:16px; line-height:1.5; }
+  .modal-box input {
+    width:100%; padding:12px; border-radius:10px; margin-bottom:10px;
+    background:rgba(0,180,255,0.08); border:1px solid rgba(0,180,255,0.35);
+    color:#e6f1ff; font-size:14px; outline:none;
+  }
+  .modal-box input:focus { border-color:#00b4ff; }
+  .modal-box .btn { width:100%; margin-top:4px; }
+  .link { color:#00b4ff; font-size:12px; cursor:pointer; margin-top:12px; display:inline-block; }
+
+  /* ===== Leaderboard ===== */
   .lb-item {
-    display: flex; justify-content: space-between;
-    background: #fff; padding: 11px 16px;
-    border-radius: 40px; margin-bottom: 6px;
-    font-size: 0.9rem; font-weight: 500;
-    border: 1px solid #b8d4a8;
+    display:flex; align-items:center; gap:10px; padding:9px 10px;
+    border-radius:10px; margin-bottom:6px; font-size:13px;
+    background:rgba(0,180,255,0.06); border:1px solid rgba(0,180,255,0.15);
   }
-  .lb-item .rank { font-weight: 700; color: #2e7d32; margin-right: 6px; }
-  .lb-item.me { background: #fff9c4; border-color: #ffd54f; }
-  .link { text-align: center; font-size: 0.82rem; color: #6b8c5c; text-decoration: underline; cursor: pointer; margin-top: 10px; }
-  .row { display: flex; gap: 8px; margin-top: 10px; }
-  .row button { flex: 1; font-size: 0.9rem; padding: 12px; }
-  .hidden { display: none !important; }
-  .toast {
-    position: absolute; bottom: 24px; left: 50%;
-    transform: translateX(-50%) translateY(20px);
-    background: #1e3a12ee; color: #e8f5e0;
-    padding: 10px 20px; border-radius: 40px;
-    font-size: 0.82rem; font-weight: 500;
-    opacity: 0; transition: 0.3s; pointer-events: none;
-    z-index: 999; white-space: nowrap; max-width: 90%;
+  .lb-item.me { background:rgba(0,255,150,0.12); border-color:#00ffa3; }
+  .lb-rank {
+    width:26px; height:26px; border-radius:50%; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+    font-weight:700; font-size:12px; background:rgba(0,180,255,0.2);
   }
-  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-  .result-emoji { font-size: 4rem; text-align: center; margin: 6px 0; }
-  .scroll { flex: 1; overflow-y: auto; }
+  .lb-rank.gold { background:linear-gradient(135deg,#ffd700,#ff8c00); color:#1a1a1a; }
+  .lb-rank.silver { background:linear-gradient(135deg,#e0e0e0,#9e9e9e); color:#1a1a1a; }
+  .lb-rank.bronze { background:linear-gradient(135deg,#cd7f32,#8b4513); color:#fff; }
+  .lb-name { flex:1; text-align:left; }
+  .lb-points { color:#00e5ff; font-weight:700; }
+
+  /* ===== Badge Notification ===== */
+  #badgeToast {
+    position:fixed; top:60px; left:50%; transform:translateX(-50%) translateY(-120%);
+    z-index:200; background:linear-gradient(135deg,#ffd700,#ff8c00);
+    color:#1a1a1a; padding:12px 20px; border-radius:14px;
+    font-weight:700; font-size:13px; display:flex; align-items:center; gap:10px;
+    box-shadow:0 10px 40px rgba(255,180,0,0.5);
+    transition:transform .5s cubic-bezier(.2,1.4,.5,1);
+    max-width:90vw;
+  }
+  #badgeToast.show { transform:translateX(-50%) translateY(0); }
+  #badgeToast .ico { font-size:22px; }
+
+  /* ===== Loading ===== */
+  #loading {
+    position:fixed; inset:0; z-index:300; background:#05060f;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    transition:opacity .5s;
+  }
+  #loading.hide { opacity:0; pointer-events:none; }
+  .atom-spin {
+    width:60px; height:60px; border-radius:50%;
+    border:3px solid rgba(0,180,255,0.2);
+    border-top-color:#00b4ff; animation:spin 1s linear infinite;
+    margin-bottom:16px;
+  }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  #loading p { font-size:13px; color:#8aa8c8; }
+
+  /* ===== Status Banner (unstable) ===== */
+  #statusBanner {
+    position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+    z-index:50; pointer-events:none; text-align:center;
+    font-size:20px; font-weight:800; color:#ff4d4d;
+    text-shadow:0 0 20px rgba(255,60,60,0.8);
+    opacity:0; transition:opacity .3s;
+  }
+  #statusBanner.show { opacity:1; }
+
+  /* Responsive tweaks */
+  @media (max-height:680px) {
+    #atomPanel { padding:7px 12px; font-size:11px; }
+    #qText { font-size:13px; }
+    .option { padding:9px 11px; font-size:12px; }
+    .btn { padding:10px; font-size:12px; }
+  }
 </style>
 </head>
 <body>
-<div class="app" id="app">
+<div id="app">
+  <canvas id="glCanvas"></canvas>
 
-  <!-- ============ LOGIN ============ -->
-  <div class="screen active" id="screen-login">
-    <h2>🌱 GrowChem</h2>
-    <p class="sub">Teori Asam Basa • Arrhenius • Brønsted-Lowry • Lewis</p>
-    <div class="card">
-      <input type="text" id="inUser" placeholder="Username" autocomplete="off" maxlength="16">
-      <input type="password" id="inPass" placeholder="Password" autocomplete="off" maxlength="24">
-      <button id="btnLogin">Masuk</button>
-      <button id="btnRegister" class="secondary" style="margin-top:8px;">Daftar Akun Baru</button>
-      <div class="msg" id="loginMsg"></div>
+  <!-- Loading -->
+  <div id="loading"><div class="atom-spin"></div><p>Memuat dunia atom...</p></div>
+
+  <!-- Status Banner -->
+  <div id="statusBanner">⚠️ ATOM TIDAK STABIL!</div>
+
+  <!-- Header -->
+  <div id="header" class="ui" style="display:none;">
+    <div class="user">
+      <div class="avatar" id="avatarInitial">?</div>
+      <div>
+        <div id="userName" style="font-weight:700;">Siswa</div>
+        <div style="font-size:10px;color:#8aa8c8;"><span id="userPoints">0</span> poin · <span id="userBadges">0</span> badge</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn-logout" id="btnLeaderboard">🏆</button>
+      <button class="btn-logout" id="btnLogout">Keluar</button>
     </div>
   </div>
 
-  <!-- ============ MENU ============ -->
-  <div class="screen" id="screen-menu">
-    <div class="topbar">
-      <span id="menuName">Siswa</span>
-      <span id="menuPts">0 poin</span>
+  <!-- Main -->
+  <div id="main" class="ui" style="display:none;">
+    <!-- Atom Panel -->
+    <div id="atomPanel">
+      <div class="row"><span class="label">Target Atom</span><span class="value" id="targetAtom">Na</span></div>
+      <div class="row"><span class="label">Elektron Terpasang</span><span class="value"><span id="electronCount">0</span> / <span id="electronTarget">11</span></span></div>
+      <div id="shells"></div>
     </div>
-    <h2 style="font-size:1.3rem;">🌿 Kebun Kimia</h2>
-    <p class="sub">Tanam pengetahuanmu tentang asam basa</p>
-    <div class="card" style="text-align:center;">
-      <div style="font-weight:600; color:#2b4f1e; font-size:0.9rem; margin-bottom:6px;">Badge Kamu</div>
-      <div class="badge-wrap" id="menuBadges"></div>
-    </div>
-    <button id="btnStart" style="margin-top:14px;">Mulai Menanam 🌱</button>
-    <button id="btnLb" class="secondary" style="margin-top:8px;">🏆 Peringkat</button>
-    <div class="link" id="btnLogout">Keluar Akun</div>
-  </div>
 
-  <!-- ============ GAME ============ -->
-  <div class="screen" id="screen-game">
-    <div class="topbar">
-      <span id="gameName">Siswa</span>
-      <span id="gamePts">0 poin</span>
+    <!-- Quiz -->
+    <div id="quizArea">
+      <div id="questionCard">
+        <div id="qProgress">Soal 1 dari 10</div>
+        <div id="qText">Memuat soal...</div>
+        <div id="options"></div>
+        <div id="feedback"></div>
+      </div>
     </div>
-    <div id="canvas-box"></div>
-    <div class="progress" id="progress">Soal 1 dari 10</div>
-    <div class="card">
-      <div class="question" id="question">Memuat soal...</div>
-      <div class="options" id="options"></div>
-      <div class="msg" id="feedback" style="color:#2e7d32;"></div>
-    </div>
-    <button id="btnNext" class="hidden" style="margin-top:10px;">Lanjut ➡️</button>
-    <button id="btnQuit" class="secondary" style="margin-top:6px;">Kembali ke Menu</button>
-  </div>
 
-  <!-- ============ RESULT ============ -->
-  <div class="screen" id="screen-result">
-    <div class="topbar">
-      <span id="resName">Siswa</span>
-      <span id="resPts">0 poin</span>
-    </div>
-    <div class="card" style="text-align:center;">
-      <h2 id="resTitle" style="font-size:1.4rem;">🌻 Tanaman Berbunga!</h2>
-      <div class="result-emoji" id="resEmoji">🌻</div>
-      <p id="resDesc" style="color:#2b4f1e; font-size:0.9rem; margin-bottom:10px;">Kamu berhasil menumbuhkan tanaman.</p>
-      <div class="badge-wrap" id="resBadges"></div>
-      <button id="btnBack" style="margin-top:12px;">Kembali ke Kebun</button>
+    <!-- Bottom -->
+    <div id="bottomBar">
+      <button class="btn btn-ghost" id="btnRestart" title="Ulangi atom">↺</button>
+      <button class="btn btn-primary" id="btnNext" disabled>Lanjut</button>
     </div>
   </div>
-
-  <!-- ============ LEADERBOARD ============ -->
-  <div class="screen" id="screen-lb">
-    <div class="topbar">
-      <span>🏆 Peringkat Siswa</span>
-      <span id="lbPts">0 poin</span>
-    </div>
-    <div class="scroll">
-      <ul class="lb-list" id="lbList"></ul>
-    </div>
-    <button id="btnCloseLb" class="secondary" style="margin-top:10px;">Tutup</button>
-  </div>
-
-  <div class="toast" id="toast"></div>
 </div>
 
-<!-- Three.js (WebGL) -->
+<!-- Login Modal -->
+<div class="modal active" id="modalLogin">
+  <div class="modal-box">
+    <h2>⚛️ Atom Builder</h2>
+    <p>Bangun atom dengan menjawab soal konfigurasi elektron model Bohr!</p>
+    <input type="text" id="inputUser" placeholder="Username" autocomplete="off" maxlength="16">
+    <input type="password" id="inputPass" placeholder="Password" autocomplete="off" maxlength="20">
+    <button class="btn btn-primary" id="btnLogin">Masuk</button>
+    <span class="link" id="linkRegister">Belum punya akun? Daftar</span>
+    <div id="loginMsg" style="font-size:11px;color:#ff6b6b;margin-top:10px;"></div>
+  </div>
+</div>
+
+<!-- Register Modal -->
+<div class="modal" id="modalRegister">
+  <div class="modal-box">
+    <h2>📝 Daftar Akun</h2>
+    <p>Buat akun untuk menyimpan poin dan badge kamu.</p>
+    <input type="text" id="regUser" placeholder="Username" autocomplete="off" maxlength="16">
+    <input type="password" id="regPass" placeholder="Password" autocomplete="off" maxlength="20">
+    <button class="btn btn-primary" id="btnRegister">Daftar</button>
+    <span class="link" id="linkLogin">Sudah punya akun? Masuk</span>
+    <div id="regMsg" style="font-size:11px;color:#ff6b6b;margin-top:10px;"></div>
+  </div>
+</div>
+
+<!-- Leaderboard Modal -->
+<div class="modal" id="modalLeaderboard">
+  <div class="modal-box">
+    <h2>🏆 Peringkat Siswa</h2>
+    <p>Berdasarkan total poin yang dikumpulkan</p>
+    <div id="lbList"></div>
+    <button class="btn btn-primary" id="btnCloseLb" style="margin-top:12px;">Tutup</button>
+  </div>
+</div>
+
+<!-- Badge Toast -->
+<div id="badgeToast"><span class="ico">🏅</span><span id="badgeText">Badge baru!</span></div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
-/* =========================================================
-   PENYIMPANAN DATA (JSON via localStorage)
-   Struktur: { users: { username: { password, points, badges[] } } }
-========================================================= */
-const DB_KEY = 'growchem_db_v1';
+/* ============================================================
+   DATA UNSUR & SOAL
+   ============================================================ */
+const ELEMENTS = {
+  Na: { name:'Natrium', Z:11, shells:[2,8,1] },
+  Cl: { name:'Klorin',  Z:17, shells:[2,8,7] },
+  Ca: { name:'Kalsium', Z:20, shells:[2,8,8,2] }
+};
+
+// Bank soal per unsur (10 soal)
+const QUESTION_BANK = {
+  Na: [
+    { q:'Berapa jumlah elektron maksimum pada kulit K (n=1)?', o:['2','8','18','32'], a:0 },
+    { q:'Konfigurasi elektron atom Na (Z=11) adalah...', o:['2,8,1','2,8,2','2,8,8','2,9'], a:0 },
+    { q:'Berapa jumlah elektron valensi atom Na?', o:['1','2','3','8'], a:0 },
+    { q:'Kulit manakah yang terisi penuh pada atom Na?', o:['K dan L','K saja','L saja','M saja'], a:0 },
+    { q:'Jumlah maksimum elektron pada kulit L (n=2) adalah...', o:['8','2','18','32'], a:0 },
+    { q:'Elektron valensi Na berada pada kulit...', o:['M','K','L','N'], a:0 },
+    { q:'Mengapa Na cenderung melepas 1 elektron?', o:['Agar stabil seperti gas mulia','Agar bermuatan negatif','Agar kulit M penuh','Agar menjadi Cl'], a:0 },
+    { q:'Rumus jumlah maksimum elektron kulit ke-n adalah...', o:['2n²','n²','2n','4n'], a:0 },
+    { q:'Atom Na setelah melepas 1 elektron membentuk ion...', o:['Na⁺','Na⁻','Na²⁺','Na²⁻'], a:0 },
+    { q:'Konfigurasi ion Na⁺ adalah...', o:['2,8','2,8,1','2,7','2,8,2'], a:0 }
+  ],
+  Cl: [
+    { q:'Berapa jumlah elektron maksimum pada kulit M (n=3)?', o:['18','8','32','2'], a:0 },
+    { q:'Konfigurasi elektron atom Cl (Z=17) adalah...', o:['2,8,7','2,8,8','2,7,8','2,8,6'], a:0 },
+    { q:'Berapa jumlah elektron valensi atom Cl?', o:['7','8','1','2'], a:0 },
+    { q:'Kulit yang terisi penuh pada atom Cl adalah...', o:['K dan L','K saja','L saja','M saja'], a:0 },
+    { q:'Jumlah maksimum elektron kulit N (n=4) adalah...', o:['32','18','8','2'], a:0 },
+    { q:'Elektron valensi Cl berada pada kulit...', o:['M','K','L','N'], a:0 },
+    { q:'Cl cenderung menangkap 1 elektron agar...', o:['Stabil seperti gas mulia','Menjadi logam','Kulit M kosong','Bermuatan positif'], a:0 },
+    { q:'Atom Cl setelah menangkap 1 elektron membentuk ion...', o:['Cl⁻','Cl⁺','Cl²⁻','Cl²⁺'], a:0 },
+    { q:'Konfigurasi ion Cl⁻ adalah...', o:['2,8,8','2,8,7','2,8,6','2,7,8'], a:0 },
+    { q:'Unsur Cl terletak pada golongan...', o:['VIIA (halogen)','IA','IIA','VIIIA'], a:0 }
+  ],
+  Ca: [
+    { q:'Berapa jumlah elektron maksimum pada kulit N (n=4)?', o:['32','18','8','2'], a:0 },
+    { q:'Konfigurasi elektron atom Ca (Z=20) adalah...', o:['2,8,8,2','2,8,10','2,8,8,1','2,8,9'], a:0 },
+    { q:'Berapa jumlah elektron valensi atom Ca?', o:['2','8','1','4'], a:0 },
+    { q:'Kulit yang terisi penuh pada atom Ca adalah...', o:['K, L, dan M','K dan L','L dan M','K saja'], a:0 },
+    { q:'Jumlah maksimum elektron kulit M (n=3) adalah...', o:['18','8','32','2'], a:0 },
+    { q:'Elektron valensi Ca berada pada kulit...', o:['N','M','L','K'], a:0 },
+    { q:'Ca cenderung melepas 2 elektron agar...', o:['Stabil seperti gas mulia','Menjadi anion','Kulit N penuh','Menjadi Cl'], a:0 },
+    { q:'Atom Ca setelah melepas 2 elektron membentuk ion...', o:['Ca²⁺','Ca⁺','Ca²⁻','Ca⁻'], a:0 },
+    { q:'Konfigurasi ion Ca²⁺ adalah...', o:['2,8,8','2,8,8,2','2,8,7','2,8,10'], a:0 },
+    { q:'Unsur Ca terletak pada golongan...', o:['IIA','IA','IIIA','VIIIA'], a:0 }
+  ]
+};
+
+/* ============================================================
+   PENYIMPANAN DATA (localStorage sebagai JSON)
+   ============================================================ */
+const DB_KEY = 'atomBuilderDB_v1';
 
 function loadDB() {
   try {
     const raw = localStorage.getItem(DB_KEY);
     if (raw) return JSON.parse(raw);
-  } catch (e) {}
-  return { users: {} };
+  } catch(e){}
+  return { users: {}, currentUser: null };
 }
 function saveDB(db) {
   localStorage.setItem(DB_KEY, JSON.stringify(db));
 }
 let DB = loadDB();
-let currentUser = null;
 
-/* =========================================================
-   SOAL KUIS (10 soal - Teori Asam Basa)
-========================================================= */
-const QUESTIONS = [
-  {
-    q: "Menurut teori Arrhenius, asam adalah zat yang dalam air menghasilkan ion...",
-    options: ["H⁺", "OH⁻", "Na⁺", "Cl⁻"],
-    correct: 0,
-    explain: "Arrhenius: asam menghasilkan H⁺ dalam air."
-  },
-  {
-    q: "Menurut teori Arrhenius, basa adalah zat yang dalam air menghasilkan ion...",
-    options: ["OH⁻", "H⁺", "H₃O⁺", "Cl⁻"],
-    correct: 0,
-    explain: "Arrhenius: basa menghasilkan OH⁻ dalam air."
-  },
-  {
-    q: "Menurut Brønsted-Lowry, asam adalah...",
-    options: ["Donor proton (H⁺)", "Akseptor proton (H⁺)", "Akseptor elektron", "Donor elektron"],
-    correct: 0,
-    explain: "Asam Brønsted-Lowry = donor proton."
-  },
-  {
-    q: "Menurut Brønsted-Lowry, basa adalah...",
-    options: ["Akseptor proton (H⁺)", "Donor proton (H⁺)", "Akseptor elektron", "Donor elektron"],
-    correct: 0,
-    explain: "Basa Brønsted-Lowry = akseptor proton."
-  },
-  {
-    q: "Menurut teori Lewis, asam adalah spesi yang...",
-    options: ["Menerima pasangan elektron", "Memberi pasangan elektron", "Melepas H⁺", "Menerima H⁺"],
-    correct: 0,
-    explain: "Asam Lewis = akseptor pasangan elektron."
-  },
-  {
-    q: "Menurut teori Lewis, basa adalah spesi yang...",
-    options: ["Memberi pasangan elektron", "Menerima pasangan elektron", "Melepas OH⁻", "Menerima H⁺"],
-    correct: 0,
-    explain: "Basa Lewis = donor pasangan elektron."
-  },
-  {
-    q: "Spesi yang bersifat amfiprotik (dapat bertindak sebagai asam maupun basa) adalah...",
-    options: ["H₂O", "HCl", "NaOH", "CH₄"],
-    correct: 0,
-    explain: "Air dapat mendonorkan atau menerima proton."
-  },
-  {
-    q: "Pada reaksi NH₃ + H₂O ⇌ NH₄⁺ + OH⁻, yang bertindak sebagai asam menurut Brønsted-Lowry adalah...",
-    options: ["H₂O", "NH₃", "NH₄⁺", "OH⁻"],
-    correct: 0,
-    explain: "H₂O mendonorkan proton ke NH₃ sehingga H₂O = asam."
-  },
-  {
-    q: "Contoh asam Lewis adalah...",
-    options: ["BF₃", "NH₃", "H₂O", "OH⁻"],
-    correct: 0,
-    explain: "BF₃ dapat menerima pasangan elektron."
-  },
-  {
-    q: "Pasangan asam-basa konjugasi dari HSO₄⁻ adalah...",
-    options: ["SO₄²⁻", "H₂SO₄", "H₃O⁺", "OH⁻"],
-    correct: 0,
-    explain: "HSO₄⁻ melepas H⁺ menjadi SO₄²⁻ (basa konjugasinya)."
-  }
-];
-
-/* =========================================================
-   STATE GAME
-========================================================= */
-let qIndex = 0;
-let correctCount = 0;
-let answered = false;
-let gameActive = false;
-let plantLevel = 0; // 0..10
-let scene, camera, renderer, plantGroup;
-let animId = null;
-
-/* =========================================================
-   UI HELPERS
-========================================================= */
-const $ = (id) => document.getElementById(id);
-const screens = {
-  login: $('screen-login'),
-  menu: $('screen-menu'),
-  game: $('screen-game'),
-  result: $('screen-result'),
-  lb: $('screen-lb')
-};
-function showScreen(name) {
-  Object.values(screens).forEach(s => s.classList.remove('active'));
-  screens[name].classList.add('active');
-}
-let toastTimer;
-function toast(msg) {
-  const t = $('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
-}
-
-/* =========================================================
-   LOGIN / REGISTER / LOGOUT
-========================================================= */
-$('btnLogin').onclick = () => {
-  const u = $('inUser').value.trim();
-  const p = $('inPass').value.trim();
-  const msg = $('loginMsg');
-  msg.style.color = '#b71c1c';
-  if (!u || !p) { msg.textContent = 'Isi username dan password!'; return; }
-  if (!DB.users[u]) { msg.textContent = 'Akun tidak ditemukan. Silakan daftar.'; return; }
-  if (DB.users[u].password !== p) { msg.textContent = 'Password salah.'; return; }
-  currentUser = u;
-  msg.textContent = '';
-  refreshMenu();
-  showScreen('menu');
+/* ============================================================
+   STATE APLIKASI
+   ============================================================ */
+const State = {
+  user: null,
+  targetKey: 'Na',
+  questions: [],
+  qIndex: 0,
+  electronsPlaced: 0,
+  answered: false,
+  wrongThisQuestion: false,
+  pointsEarned: 0,
+  badgesEarned: 0,
+  unstableTimer: null,
+  atomComplete: false
 };
 
-$('btnRegister').onclick = () => {
-  const u = $('inUser').value.trim();
-  const p = $('inPass').value.trim();
-  const msg = $('loginMsg');
-  if (!u || !p) { msg.style.color = '#b71c1c'; msg.textContent = 'Isi username dan password!'; return; }
-  if (u.length < 3) { msg.style.color = '#b71c1c'; msg.textContent = 'Username minimal 3 karakter.'; return; }
-  if (p.length < 4) { msg.style.color = '#b71c1c'; msg.textContent = 'Password minimal 4 karakter.'; return; }
-  if (DB.users[u]) { msg.style.color = '#b71c1c'; msg.textContent = 'Username sudah dipakai.'; return; }
-  DB.users[u] = { password: p, points: 0, badges: [] };
-  saveDB(DB);
-  msg.style.color = '#2e7d32';
-  msg.textContent = 'Akun berhasil dibuat! Silakan klik Masuk.';
-};
+/* ============================================================
+   THREE.JS - WEBGL SCENE
+   ============================================================ */
+let scene, camera, renderer, nucleus, shellMeshes = [], orbitingElectrons = [];
+let clock, animationId;
+let shakeIntensity = 0;
+let electronLossAnim = null;
 
-$('btnLogout').onclick = () => {
-  currentUser = null;
-  $('inUser').value = '';
-  $('inPass').value = '';
-  $('loginMsg').textContent = '';
-  showScreen('login');
-};
-
-/* =========================================================
-   MENU
-========================================================= */
-function refreshMenu() {
-  if (!currentUser) return;
-  const u = DB.users[currentUser];
-  $('menuName').textContent = 'Halo, ' + currentUser;
-  $('menuPts').textContent = u.points + ' poin';
-  const wrap = $('menuBadges');
-  wrap.innerHTML = '';
-  if (!u.badges || u.badges.length === 0) {
-    wrap.innerHTML = '<span class="empty-badge">Belum ada badge</span>';
-  } else {
-    u.badges.forEach(b => {
-      const s = document.createElement('span');
-      s.className = 'badge';
-      s.textContent = '🏅 ' + b;
-      wrap.appendChild(s);
-    });
-  }
-}
-
-$('btnStart').onclick = () => startGame();
-$('btnLb').onclick = () => { renderLeaderboard(); showScreen('lb'); };
-$('btnCloseLb').onclick = () => showScreen('menu');
-
-/* =========================================================
-   LEADERBOARD
-========================================================= */
-function renderLeaderboard() {
-  const list = $('lbList');
-  list.innerHTML = '';
-  const arr = Object.keys(DB.users).map(name => ({
-    name,
-    points: DB.users[name].points || 0,
-    badges: (DB.users[name].badges || []).length
-  }));
-  arr.sort((a, b) => b.points - a.points);
-  if (arr.length === 0) {
-    list.innerHTML = '<li class="lb-item">Belum ada pemain.</li>';
-  } else {
-    arr.forEach((u, i) => {
-      const li = document.createElement('li');
-      li.className = 'lb-item' + (u.name === currentUser ? ' me' : '');
-      li.innerHTML = `<span><span class="rank">#${i+1}</span>${u.name} ${u.badges ? '🏅' + u.badges : ''}</span><span>${u.points} poin</span>`;
-      list.appendChild(li);
-    });
-  }
-  $('lbPts').textContent = (DB.users[currentUser]?.points || 0) + ' poin';
-}
-
-/* =========================================================
-   GAME START
-========================================================= */
-function startGame() {
-  if (!currentUser) return;
-  qIndex = 0;
-  correctCount = 0;
-  answered = false;
-  gameActive = true;
-  plantLevel = 0;
-  $('gameName').textContent = currentUser;
-  $('gamePts').textContent = DB.users[currentUser].points + ' poin';
-  $('feedback').textContent = '';
-  $('btnNext').classList.add('hidden');
-  initThree();
-  loadQuestion();
-  showScreen('game');
-}
-
-function loadQuestion() {
-  if (qIndex >= QUESTIONS.length) { endGame(); return; }
-  answered = false;
-  const q = QUESTIONS[qIndex];
-  $('progress').textContent = `Soal ${qIndex + 1} dari 10  •  Benar: ${correctCount}`;
-  $('question').textContent = q.q;
-  const box = $('options');
-  box.innerHTML = '';
-  q.options.forEach((opt, i) => {
-    const b = document.createElement('button');
-    b.className = 'option-btn';
-    b.textContent = opt;
-    b.onclick = () => selectAnswer(i, b);
-    box.appendChild(b);
-  });
-  $('btnNext').classList.add('hidden');
-  $('feedback').textContent = '';
-}
-
-function selectAnswer(idx, btn) {
-  if (answered || !gameActive) return;
-  answered = true;
-  const q = QUESTIONS[qIndex];
-  const all = document.querySelectorAll('.option-btn');
-  all.forEach(b => b.disabled = true);
-
-  if (idx === q.correct) {
-    btn.classList.add('correct');
-    correctCount++;
-    plantLevel = correctCount;
-    DB.users[currentUser].points += 10;
-    saveDB(DB);
-    $('gamePts').textContent = DB.users[currentUser].points + ' poin';
-    $('feedback').style.color = '#2e7d32';
-    $('feedback').textContent = '✅ Benar! Tanaman tumbuh. ' + q.explain;
-    drawPlant(plantLevel);
-    toast('🌱 Tanaman tumbuh! +10 poin');
-  } else {
-    btn.classList.add('wrong');
-    all[q.correct].classList.add('correct');
-    $('feedback').style.color = '#b71c1c';
-    $('feedback').textContent = '❌ Salah. Tanaman tidak tumbuh. ' + q.explain;
-    toast('❌ Salah, tanaman tidak tumbuh');
-    // Tanaman tidak tumbuh -> siswa akan mengulang soal ini
-  }
-
-  $('progress').textContent = `Soal ${qIndex + 1} dari 10  •  Benar: ${correctCount}`;
-
-  if (idx !== q.correct) {
-    // Jika salah: ulangi soal yang sama (tanaman tidak tumbuh)
-    setTimeout(() => {
-      answered = false;
-      // reset pilihan
-      const box = $('options');
-      box.innerHTML = '';
-      q.options.forEach((opt, i) => {
-        const b = document.createElement('button');
-        b.className = 'option-btn';
-        b.textContent = opt;
-        b.onclick = () => selectAnswer(i, b);
-        box.appendChild(b);
-      });
-      $('feedback').textContent = '🔁 Ayo coba lagi soal ini!';
-      $('feedback').style.color = '#e65100';
-    }, 1500);
-  } else {
-    // Jika benar: lanjut ke soal berikutnya
-    if (qIndex < QUESTIONS.length - 1) {
-      $('btnNext').classList.remove('hidden');
-    } else {
-      setTimeout(endGame, 1200);
-    }
-  }
-}
-
-$('btnNext').onclick = () => {
-  qIndex++;
-  loadQuestion();
-};
-
-$('btnQuit').onclick = () => {
-  gameActive = false;
-  if (animId) cancelAnimationFrame(animId);
-  refreshMenu();
-  showScreen('menu');
-};
-
-/* =========================================================
-   END GAME + BADGE
-========================================================= */
-function endGame() {
-  gameActive = false;
-  if (animId) cancelAnimationFrame(animId);
-  const u = DB.users[currentUser];
-  const perfect = correctCount === 10;
-
-  // Badge diberikan jika tanaman berhasil berbunga & berbuah (10 benar)
-  if (perfect) {
-    const badgeName = "telah menumbuhkan tanaman 1 kali";
-    if (!u.badges.includes(badgeName)) {
-      u.badges.push(badgeName);
-      saveDB(DB);
-    }
-  }
-
-  $('resName').textContent = currentUser;
-  $('resPts').textContent = u.points + ' poin';
-  const title = $('resTitle'), emoji = $('resEmoji'), desc = $('resDesc'), bw = $('resBadges');
-  bw.innerHTML = '';
-
-  if (perfect) {
-    title.textContent = '🌸 Tanaman Berbunga & Berbuah!';
-    emoji.textContent = '🌻🍎';
-    desc.textContent = 'Luar biasa! Semua jawaban benar. Kamu mendapat badge!';
-  } else {
-    title.textContent = '🌿 Tanaman Tumbuh Sebagian';
-    emoji.textContent = '🌱';
-    desc.textContent = `Kamu menjawab benar ${correctCount} dari 10 soal. Terus belajar!`;
-  }
-
-  if (u.badges.length === 0) {
-    bw.innerHTML = '<span class="empty-badge">Belum ada badge</span>';
-  } else {
-    u.badges.forEach(b => {
-      const s = document.createElement('span');
-      s.className = 'badge';
-      s.textContent = '🏅 ' + b;
-      bw.appendChild(s);
-    });
-  }
-
-  showScreen('result');
-}
-
-$('btnBack').onclick = () => {
-  refreshMenu();
-  showScreen('menu');
-};
-
-/* =========================================================
-   WEBGL - THREE.JS TANAMAN
-========================================================= */
 function initThree() {
-  const box = $('canvas-box');
-  box.innerHTML = '';
-  const W = box.clientWidth, H = box.clientHeight;
+  const canvas = document.getElementById('glCanvas');
+  renderer = new THREE.WebGLRenderer({ canvas, antialias:true, alpha:true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setSize(window.innerWidth, window.innerHeight);
 
   scene = new THREE.Scene();
-  scene.background = new THREE.Color(0xcfe9c4);
+  scene.fog = new THREE.FogExp2(0x05060f, 0.035);
 
-  camera = new THREE.PerspectiveCamera(45, W / H, 0.1, 100);
-  camera.position.set(0, 1.6, 5.2);
-  camera.lookAt(0, 1.0, 0);
+  camera = new THREE.PerspectiveCamera(55, window.innerWidth/window.innerHeight, 0.1, 200);
+  camera.position.set(0, 4, 16);
+  camera.lookAt(0, 0, 0);
 
-  renderer = new THREE.WebGLRenderer({ antialias: true });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  renderer.setSize(W, H);
-  renderer.shadowMap.enabled = true;
-  box.appendChild(renderer.domElement);
+  // Lighting
+  scene.add(new THREE.AmbientLight(0x334466, 1.2));
+  const p1 = new THREE.PointLight(0x00b4ff, 2.5, 50); p1.position.set(6,6,8); scene.add(p1);
+  const p2 = new THREE.PointLight(0x7b2ff7, 2, 50); p2.position.set(-8,-4,-6); scene.add(p2);
+  const p3 = new THREE.PointLight(0x00ffa3, 1.2, 40); p3.position.set(0,-8,4); scene.add(p3);
 
-  // Cahaya
-  scene.add(new THREE.AmbientLight(0xffffff, 0.7));
-  const dir = new THREE.DirectionalLight(0xffffff, 0.85);
-  dir.position.set(5, 10, 7);
-  dir.castShadow = true;
-  scene.add(dir);
+  // Nucleus
+  nucleus = new THREE.Group();
+  const nucGeo = new THREE.SphereGeometry(1.15, 32, 32);
+  const nucMat = new THREE.MeshPhongMaterial({
+    color:0xff4466, emissive:0xff2244, emissiveIntensity:0.7,
+    shininess:80, specular:0xffffff
+  });
+  const nucMesh = new THREE.Mesh(nucGeo, nucMat);
+  nucleus.add(nucMesh);
 
-  // Tanah
-  const ground = new THREE.Mesh(
-    new THREE.CircleGeometry(3, 32),
-    new THREE.MeshStandardMaterial({ color: 0x6b8c5c })
-  );
-  ground.rotation.x = -Math.PI / 2;
-  ground.position.y = -0.02;
-  ground.receiveShadow = true;
-  scene.add(ground);
+  // Glow around nucleus
+  const glowMat = new THREE.MeshBasicMaterial({
+    color:0xff6688, transparent:true, opacity:0.18, side:THREE.BackSide
+  });
+  const glow = new THREE.Mesh(new THREE.SphereGeometry(1.6, 24, 24), glowMat);
+  nucleus.add(glow);
+  scene.add(nucleus);
 
-  const soil = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.8, 0.95, 0.3, 20),
-    new THREE.MeshStandardMaterial({ color: 0x5d4037 })
-  );
-  soil.position.y = 0.12;
-  soil.castShadow = true;
-  soil.receiveShadow = true;
-  scene.add(soil);
+  // Starfield background
+  const starGeo = new THREE.BufferGeometry();
+  const starCount = 800;
+  const positions = new Float32Array(starCount*3);
+  for (let i=0;i<starCount;i++){
+    positions[i*3]   = (Math.random()-0.5)*120;
+    positions[i*3+1] = (Math.random()-0.5)*120;
+    positions[i*3+2] = (Math.random()-0.5)*120;
+  }
+  starGeo.setAttribute('position', new THREE.BufferAttribute(positions,3));
+  const starMat = new THREE.PointsMaterial({ color:0x88bbff, size:0.25, transparent:true, opacity:0.6 });
+  scene.add(new THREE.Points(starGeo, starMat));
 
-  plantGroup = new THREE.Group();
-  scene.add(plantGroup);
-  drawPlant(0);
-
-  const onResize = () => {
-    const w = box.clientWidth, h = box.clientHeight;
-    renderer.setSize(w, h);
-    camera.aspect = w / h;
-    camera.updateProjectionMatrix();
-  };
-  window.addEventListener('resize', onResize);
-
+  clock = new THREE.Clock();
   animate();
 }
 
+function buildShells(shellConfig) {
+  // Hapus shell lama
+  shellMeshes.forEach(s => scene.remove(s));
+  shellMeshes = [];
+
+  const colors = [0x00d4ff, 0x7b2ff7, 0x00ffa3, 0xffaa00];
+  const baseRadius = 2.6;
+  const gap = 1.5;
+
+  shellConfig.forEach((cap, i) => {
+    const r = baseRadius + i*gap;
+    // Ring (torus) sebagai lintasan
+    const ringGeo = new THREE.TorusGeometry(r, 0.035, 8, 80);
+    const ringMat = new THREE.MeshBasicMaterial({
+      color: colors[i % colors.length], transparent:true, opacity:0.55
+    });
+    const ring = new THREE.Mesh(ringGeo, ringMat);
+    ring.rotation.x = Math.PI/2;
+    ring.userData = { radius:r, color:colors[i % colors.length], shellIndex:i, capacity:cap };
+    scene.add(ring);
+    shellMeshes.push(ring);
+  });
+}
+
+function addElectron(shellIndex, totalInShell) {
+  // shellIndex = 0 (K), 1 (L), dst
+  if (shellIndex >= shellMeshes.length) return;
+  const shell = shellMeshes[shellIndex];
+  const r = shell.userData.radius;
+  const color = shell.userData.color;
+
+  const geo = new THREE.SphereGeometry(0.22, 16, 16);
+  const mat = new THREE.MeshPhongMaterial({
+    color: color, emissive: color, emissiveIntensity:1.2, shininess:100
+  });
+  const e = new THREE.Mesh(geo, mat);
+
+  // Posisi awal: sudut tersebar
+  const angle = (totalInShell / shell.userData.capacity) * Math.PI * 2;
+  const tilt = shellIndex * 0.4;
+  e.userData = {
+    radius: r,
+    angle: angle,
+    speed: 0.9 + shellIndex*0.25,
+    tilt: tilt,
+    shellIndex: shellIndex
+  };
+  // Set posisi awal
+  updateElectronPosition(e);
+  scene.add(e);
+  orbitingElectrons.push(e);
+
+  // Animasi "pop" masuk
+  e.scale.set(0.1,0.1,0.1);
+  const start = performance.now();
+  function popAnim(t){
+    const p = Math.min((t-start)/350, 1);
+    const s = p < 0.5 ? p*2 : 1 + Math.sin((p-0.5)*Math.PI)*0.3;
+    e.scale.set(s,s,s);
+    if (p < 1) requestAnimationFrame(popAnim);
+    else e.scale.set(1,1,1);
+  }
+  requestAnimationFrame(popAnim);
+}
+
+function updateElectronPosition(e) {
+  const u = e.userData;
+  const x = Math.cos(u.angle) * u.radius;
+  const z = Math.sin(u.angle) * u.radius;
+  // Tilt orbit
+  const y = Math.sin(u.angle) * u.radius * Math.sin(u.tilt);
+  const zz = Math.sin(u.angle) * u.radius * Math.cos(u.tilt);
+  e.position.set(x, y, zz);
+}
+
+function removeLastElectron() {
+  // Animasi elektron terlepas
+  if (orbitingElectrons.length === 0) return;
+  const e = orbitingElectrons.pop();
+  const start = performance.now();
+  const startPos = e.position.clone();
+  const dir = startPos.clone().normalize();
+  function fly(t){
+    const p = Math.min((t-start)/600, 1);
+    const dist = p * 20;
+    e.position.copy(startPos).add(dir.multiplyScalar(dist));
+    e.material.opacity = 1-p;
+    e.material.transparent = true;
+    e.scale.multiplyScalar(0.97);
+    if (p < 1) requestAnimationFrame(fly);
+    else scene.remove(e);
+  }
+  requestAnimationFrame(fly);
+}
+
+function clearAllElectrons() {
+  orbitingElectrons.forEach(e => scene.remove(e));
+  orbitingElectrons = [];
+}
+
 function animate() {
-  animId = requestAnimationFrame(animate);
-  if (plantGroup) plantGroup.rotation.y += 0.006;
-  if (renderer && scene && camera) renderer.render(scene, camera);
+  animationId = requestAnimationFrame(animate);
+  const dt = clock.getDelta();
+  const t = clock.elapsedTime;
+
+  // Rotasi inti
+  nucleus.rotation.y += dt * 0.4;
+  nucleus.rotation.x += dt * 0.15;
+
+  // Getaran inti jika tidak stabil
+  if (shakeIntensity > 0.01) {
+    nucleus.position.x = (Math.random()-0.5) * shakeIntensity;
+    nucleus.position.y = (Math.random()-0.5) * shakeIntensity;
+    nucleus.position.z = (Math.random()-0.5) * shakeIntensity;
+    shakeIntensity *= 0.96;
+  } else {
+    nucleus.position.set(0,0,0);
+    shakeIntensity = 0;
+  }
+
+  // Gerak elektron
+  orbitingElectrons.forEach(e => {
+    e.userData.angle += dt * e.userData.speed;
+    updateElectronPosition(e);
+  });
+
+  // Rotasi ring
+  shellMeshes.forEach((s,i) => {
+    s.rotation.z += dt * 0.1 * (i+1);
+  });
+
+  // Kamera sedikit orbit
+  camera.position.x = Math.sin(t*0.15) * 1.5;
+  camera.position.y = 4 + Math.sin(t*0.2) * 0.8;
+  camera.lookAt(0,0,0);
+
+  renderer.render(scene, camera);
 }
 
-/* =========================================================
-   GAMBAR TANAMAN BERDASARKAN LEVEL (0..10)
-========================================================= */
-function drawPlant(level) {
-  if (!plantGroup) return;
-  while (plantGroup.children.length) plantGroup.remove(plantGroup.children[0]);
+function onResize() {
+  if (!renderer) return;
+  camera.aspect = window.innerWidth/window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+}
+window.addEventListener('resize', onResize);
 
-  if (level === 0) {
-    // Biji
-    const seed = new THREE.Mesh(
-      new THREE.SphereGeometry(0.13, 10, 10),
-      new THREE.MeshStandardMaterial({ color: 0x8d6e63 })
-    );
-    seed.position.y = 0.3;
-    seed.castShadow = true;
-    plantGroup.add(seed);
-    return;
+/* ============================================================
+   LOGIKA GAME
+   ============================================================ */
+function shuffleArray(arr) {
+  const a = [...arr];
+  for (let i=a.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]] = [a[j],a[i]];
   }
-
-  // Batang
-  const stemH = 0.4 + (level / 10) * 1.9;
-  const stem = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.045, 0.07, stemH, 8),
-    new THREE.MeshStandardMaterial({ color: 0x4caf50 })
-  );
-  stem.position.y = 0.25 + stemH / 2;
-  stem.castShadow = true;
-  plantGroup.add(stem);
-
-  // Daun
-  if (level >= 2) {
-    const leaves = Math.min(level - 1, 6);
-    for (let i = 0; i < leaves; i++) {
-      const geo = new THREE.SphereGeometry(0.16, 7, 7);
-      geo.scale(1, 0.28, 0.55);
-      const leaf = new THREE.Mesh(
-        geo,
-        new THREE.MeshStandardMaterial({ color: 0x66bb6a })
-      );
-      const angle = (i / leaves) * Math.PI * 2;
-      const y = 0.35 + (i / leaves) * stemH * 0.8;
-      leaf.position.set(Math.cos(angle) * 0.26, y, Math.sin(angle) * 0.26);
-      leaf.rotation.y = angle;
-      leaf.rotation.z = 0.35;
-      leaf.castShadow = true;
-      plantGroup.add(leaf);
-    }
-  }
-
-  // Bunga (muncul saat level >= 8)
-  if (level >= 8) {
-    const flower = new THREE.Group();
-    const petals = 6;
-    for (let i = 0; i < petals; i++) {
-      const pGeo = new THREE.SphereGeometry(0.13, 7, 7);
-      pGeo.scale(1, 0.4, 0.65);
-      const petal = new THREE.Mesh(
-        pGeo,
-        new THREE.MeshStandardMaterial({ color: 0xffb74d })
-      );
-      const a = (i / petals) * Math.PI * 2;
-      petal.position.set(Math.cos(a) * 0.18, 0, Math.sin(a) * 0.18);
-      petal.rotation.y = a;
-      petal.castShadow = true;
-      flower.add(petal);
-    }
-    const center = new THREE.Mesh(
-      new THREE.SphereGeometry(0.1, 7, 7),
-      new THREE.MeshStandardMaterial({ color: 0xffeb3b })
-    );
-    center.castShadow = true;
-    flower.add(center);
-    flower.position.y = 0.25 + stemH;
-    plantGroup.add(flower);
-  }
-
-  // Buah (muncul saat level 10 / sempurna)
-  if (level >= 10) {
-    const fGeo = new THREE.SphereGeometry(0.15, 10, 10);
-    const fMat = new THREE.MeshStandardMaterial({ color: 0xe53935 });
-    const f1 = new THREE.Mesh(fGeo, fMat);
-    f1.position.set(0.26, 0.25 + stemH * 0.72, 0.14);
-    f1.castShadow = true;
-    plantGroup.add(f1);
-    const f2 = new THREE.Mesh(fGeo, fMat);
-    f2.position.set(-0.22, 0.25 + stemH * 0.62, -0.2);
-    f2.castShadow = true;
-    plantGroup.add(f2);
-  }
+  return a;
 }
 
-/* =========================================================
-   INISIALISASI
-========================================================= */
-window.addEventListener('load', () => {
-  if (typeof THREE === 'undefined') {
-    console.warn('Three.js gagal dimuat, animasi WebGL tidak tersedia.');
+function pickTarget() {
+  const keys = Object.keys(ELEMENTS);
+  return keys[Math.floor(Math.random()*keys.length)];
+}
+
+function startNewAtom() {
+  State.targetKey = pickTarget();
+  const el = ELEMENTS[State.targetKey];
+  State.questions = shuffleArray(QUESTION_BANK[State.targetKey]).slice(0,10);
+  State.qIndex = 0;
+  State.electronsPlaced = 0;
+  State.answered = false;
+  State.wrongThisQuestion = false;
+  State.pointsEarned = 0;
+  State.atomComplete = false;
+
+  // Reset UI
+  document.getElementById('targetAtom').textContent = `${el.name} (${State.targetKey})`;
+  document.getElementById('electronCount').textContent = '0';
+  document.getElementById('electronTarget').textContent = el.Z;
+  document.getElementById('btnNext').disabled = true;
+  document.getElementById('btnNext').textContent = 'Lanjut';
+  hideFeedback();
+  updateShellChips();
+
+  // Reset 3D
+  clearAllElectrons();
+  buildShells(el.shells);
+
+  renderQuestion();
+}
+
+function updateShellChips() {
+  const el = ELEMENTS[State.targetKey];
+  const container = document.getElementById('shells');
+  container.innerHTML = '';
+  const shellNames = ['K','L','M','N'];
+
+  // Hitung elektron per shell berdasarkan electronsPlaced
+  const counts = new Array(el.shells.length).fill(0);
+  let remaining = State.electronsPlaced;
+  for (let i=0;i<el.shells.length;i++){
+    const fill = Math.min(remaining, el.shells[i]);
+    counts[i] = fill;
+    remaining -= fill;
   }
-});
-</script>
-</body>
-</html>
+
+  el.shells.forEach((cap, i) => {
+    const chip = document
