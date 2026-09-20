@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Atom Builder - Konfigurasi Elektron Bohr</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body { width:100%; height:100%; overflow:hidden; font-family:'Segoe UI',Roboto,sans-serif; background:#05060f; color:#e6f1ff; }
+  #app { position:relative; width:100%; height:100%; display:flex; flex-direction:column; }
+
+  /* ===== WebGL Canvas ===== */
+  #glCanvas { position:absolute; inset:0; z-index:0; }
+
+  /* ===== Overlay UI ===== */
+  .ui { position:relative; z-index:10; pointer-events:none; }
+  .ui > * { pointer-events:auto; }
+
+  /* ===== Header ===== */
+  #header {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:10px 14px; background:rgba(8,14,30,0.75);
+    backdrop-filter:blur(8px); border-bottom:1px solid rgba(0,180,255,0.25);
+    font-size:13px;
+  }
+  #header .user { display:flex; align-items:center; gap:8px; }
+  #header .avatar {
+    width:30px; height:30px; border-radius:50%;
+    background:linear-gradient(135deg,#00d4ff,#7b2ff7);
+    display:flex; align-items:center; justify-content:center;
+    font-weight:bold; font-size:13px;
+  }
+  #header .stats { display:flex; gap:12px; }
+  #header .stats span { color:#00d4ff; font-weight:700; }
+  .btn-logout {
+    background:transparent; border:1px solid rgba(255,80,80,0.5);
+    color:#ff6b6b; border-radius:8px; padding:5px 10px; font-size:11px;
+    cursor:pointer;
+  }
+
+  /* ===== Main Content ===== */
+  #main { flex:1; display:flex; flex-direction:column; justify-content:space-between; }
+
+  /* ===== Atom Info Panel ===== */
+  #atomPanel {
+    margin:10px 14px 0; padding:10px 14px;
+    background:rgba(8,14,30,0.7); backdrop-filter:blur(8px);
+    border:1px solid rgba(0,180,255,0.25); border-radius:14px;
+    font-size:12px;
+  }
+  #atomPanel .row { display:flex; justify-content:space-between; margin-bottom:4px; }
+  #atomPanel .label { color:#8aa8c8; }
+  #atomPanel .value { color:#00e5ff; font-weight:700; }
+  #shells { display:flex; gap:8px; margin-top:6px; flex-wrap:wrap; }
+  .shell-chip {
+    padding:3px 9px; border-radius:20px; font-size:11px; font-weight:700;
+    background:rgba(0,180,255,0.12); border:1px solid rgba(0,180,255,0.4);
+    color:#7fd6ff;
+  }
+  .shell-chip.full { background:rgba(0,255,150,0.15); border-color:#00ffa3; color:#00ffa3; }
+
+  /* ===== Question Card ===== */
+  #quizArea { padding:0 14px; }
+  #questionCard {
+    background:rgba(10,18,38,0.85); backdrop-filter:blur(10px);
+    border:1px solid rgba(0,180,255,0.3); border-radius:16px;
+    padding:14px; margin-bottom:10px;
+    box-shadow:0 8px 30px rgba(0,120,255,0.15);
+  }
+  #qProgress { font-size:11px; color:#8aa8c8; margin-bottom:6px; }
+  #qText { font-size:14px; line-height:1.45; margin-bottom:12px; font-weight:600; }
+  #options { display:flex; flex-direction:column; gap:8px; }
+  .option {
+    background:rgba(0,180,255,0.08); border:1px solid rgba(0,180,255,0.3);
+    color:#d0e8ff; border-radius:10px; padding:11px 13px; font-size:13px;
+    text-align:left; cursor:pointer; transition:all .2s;
+    display:flex; align-items:center; gap:10px;
+  }
+  .option .key {
+    width:22px; height:22px; border-radius:50%; flex-shrink:0;
+    background:rgba(0,180,255,0.2); display:flex; align-items:center;
+    justify-content:center; font-weight:700; font-size:11px;
+  }
+  .option:active { transform:scale(0.98); }
+  .option.correct { background:rgba(0,255,150,0.2); border-color:#00ffa3; color:#00ffa3; }
+  .option.wrong { background:rgba(255,60,60,0.2); border-color:#ff4d4d; color:#ff6b6b; }
+  .option:disabled { opacity:0.6; }
+
+  /* ===== Feedback ===== */
+  #feedback {
+    text-align:center; font-size:13px; font-weight:700; padding:6px;
+    border-radius:10px; margin-top:8px; display:none;
+  }
+  #feedback.ok { display:block; color:#00ffa3; }
+  #feedback.bad { display:block; color:#ff6b6b; }
+
+  /* ===== Bottom Bar ===== */
+  #bottomBar {
+    display:flex; gap:10px; padding:10px 14px 14px;
+    align-items:center;
+  }
+  .btn {
+    flex:1; padding:12px; border-radius:12px; font-size:13px; font-weight:700;
+    border:none; cursor:pointer; transition:all .2s; text-align:center;
+  }
+  .btn-primary {
+    background:linear-gradient(135deg,#00b4ff,#7b2ff7); color:#fff;
+  }
+  .btn-primary:active { transform:scale(0.97); }
+  .btn-primary:disabled { opacity:0.4; }
+  .btn-ghost {
+    background:rgba(0,180,255,0.1); border:1px solid rgba(0,180,255,0.4);
+    color:#7fd6ff; flex:0 0 auto; padding:12px 16px;
+  }
+
+  /* ===== Modals ===== */
+  .modal {
+    position:fixed; inset:0; z-index:100; display:none;
+    align-items:center; justify-content:center;
+    background:rgba(2,4,12,0.85); backdrop-filter:blur(6px); padding:20px;
+  }
+  .modal.active { display:flex; }
+  .modal-box {
+    width:100%; max-width:380px; background:rgba(10,18,38,0.98);
+    border:1px solid rgba(0,180,255,0.35); border-radius:20px;
+    padding:24px; text-align:center;
+    box-shadow:0 20px 60px rgba(0,120,255,0.3);
+    max-height:90vh; overflow-y:auto;
+  }
+  .modal-box h2 { font-size:19px; margin-bottom:6px; color:#00e5ff; }
+  .modal-box p { font-size:12px; color:#8aa8c8; margin-bottom:16px; line-height:1.5; }
+  .modal-box input {
+    width:100%; padding:12px; border-radius:10px; margin-bottom:10px;
+    background:rgba(0,180,255,0.08); border:1px solid rgba(0,180,255,0.35);
+    color:#e6f1ff; font-size:14px; outline:none;
+  }
+  .modal-box input:focus { border-color:#00b4ff; }
+  .modal-box .btn { width:100%; margin-top:4px; }
+  .link { color:#00b4ff; font-size:12px; cursor:pointer; margin-top:12px; display:inline-block; }
+
+  /* ===== Leaderboard ===== */
+  .lb-item {
+    display:flex; align-items:center; gap:10px; padding:9px 10px;
+    border-radius:10px; margin-bottom:6px; font-size:13px;
+    background:rgba(0,180,255,0.06); border:1px solid rgba(0,180,255,0.15);
+  }
+  .lb-item.me { background:rgba(0,255,150,0.12); border-color:#00ffa3; }
+  .lb-rank {
+    width:26px; height:26px; border-radius:50%; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+    font-weight:700; font-size:12px; background:rgba(0,180,255,0.2);
+  }
+  .lb-rank.gold { background:linear-gradient(135deg,#ffd700,#ff8c00); color:#1a1a1a; }
+  .lb-rank.silver { background:linear-gradient(135deg,#e0e0e0,#9e9e9e); color:#1a1a1a; }
+  .lb-rank.bronze { background:linear-gradient(135deg,#cd7f32,#8b4513); color:#fff; }
+  .lb-name { flex:1; text-align:left; }
+  .lb-points { color:#00e5ff; font-weight:700; }
+
+  /* ===== Badge Notification ===== */
+  #badgeToast {
+    position:fixed; top:60px; left:50%; transform:translateX(-50%) translateY(-120%);
+    z-index:200; background:linear-gradient(135deg,#ffd700,#ff8c00);
+    color:#1a1a1a; padding:12px 20px; border-radius:14px;
+    font-weight:700; font-size:13px; display:flex; align-items:center; gap:10px;
+    box-shadow:0 10px 40px rgba(255,180,0,0.5);
+    transition:transform .5s cubic-bezier(.2,1.4,.5,1);
+    max-width:90vw;
+  }
+  #badgeToast.show { transform:translateX(-50%) translateY(0); }
+  #badgeToast .ico { font-size:22px; }
+
+  /* ===== Loading ===== */
+  #loading {
+    position:fixed; inset:0; z-index:300; background:#05060f;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    transition:opacity .5s;
+  }
+  #loading.hide { opacity:0; pointer-events:none; }
+  .atom-spin {
+    width:60px; height:60px; border-radius:50%;
+    border:3px solid rgba(0,180,255,0.2);
+    border-top-color:#00b4ff; animation:spin 1s linear infinite;
+    margin-bottom:16px;
+  }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  #loading p { font-size:13px; color:#8aa8c8; }
+
+  /* ===== Status Banner (unstable) ===== */
+  #statusBanner {
+    position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+    z-index:50; pointer-events:none; text-align:center;
+    font-size:20px; font-weight:800; color:#ff4d4d;
+    text-shadow:0 0 20px rgba(255,60,60,0.8);
+    opacity:0; transition:opacity .3s;
+  }
+  #statusBanner.show { opacity:1; }
+
+  /* Responsive tweaks */
+  @media (max-height:680px) {
+    #atomPanel { padding:7px 12px; font-size:11px; }
+    #qText { font-size:13px; }
+    .option { padding:9px 11px; font-size:12px; }
+    .btn { padding:10px; font-size:12px; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <canvas id="glCanvas"></canvas>
+
+  <!-- Loading -->
+  <div id="loading"><div class="atom-spin"></div><p>Memuat dunia atom...</p></div>
+
+  <!-- Status Banner -->
+  <div id="statusBanner">⚠️ ATOM TIDAK STABIL!</div>
+
+  <!-- Header -->
+  <div id="header" class="ui" style="display:none;">
+    <div class="user">
+      <div class="avatar" id="avatarInitial">?</div>
+      <div>
+        <div id="userName" style="font-weight:700;">Siswa</div>
+        <div style="font-size:10px;color:#8aa8c8;"><span id="userPoints">0</span> poin · <span id="userBadges">0</span> badge</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn-logout" id="btnLeaderboard">🏆</button>
+      <button class="btn-logout" id="btnLogout">Keluar</button>
+    </div>
+  </div>
+
+  <!-- Main -->
+  <div id="main" class="ui" style="display:none;">
+    <!-- Atom Panel -->
+    <div id="atomPanel">
+      <div class="row"><span class="label">Target Atom</span><span class="value" id="targetAtom">Na</span></div>
+      <div class="row"><span class="label">Elektron Terpasang</span><span class="value"><span id="electronCount">0</span> / <span id="electronTarget">11</span></span></div>
+      <div id="shells"></div>
+    </div>
+
+    <!-- Quiz -->
+    <div id="quizArea">
+      <div id="questionCard">
+        <div id="qProgress">Soal 1 dari 10</div>
+        <div id="qText">Memuat soal...</div>
+        <div id="options"></div>
+        <div id="feedback"></div>
+      </div>
+    </div>
+
+    <!-- Bottom -->
+    <div id="bottomBar">
+      <button class="btn btn-ghost" id="btnRestart" title="Ulangi atom">↺</button>
+      <button class="btn btn-primary" id="btnNext" disabled>Lanjut</button>
+    </div>
+  </div>
+</div>
+
+<!-- Login Modal -->
+<div class="modal active" id="modalLogin">
+  <div class="modal-box">
+    <h2>⚛️ Atom Builder</h2>
+    <p>Bangun atom dengan menjawab soal konfigurasi elektron model Bohr!</p>
+    <input type="text" id="inputUser" placeholder="Username" autocomplete="off" maxlength="16">
+    <input type="password" id="inputPass" placeholder="Password" autocomplete="off" maxlength="20">
+    <button class="btn btn-primary" id="btnLogin">Masuk</button>
+    <span class="link" id="linkRegister">Belum punya akun? Daftar</span>
+    <div id="loginMsg" style="font-size:11px;color:#ff6b6b;margin-top:10px;"></div>
+  </div>
+</div>
+
+<!-- Register Modal -->
+<div class="modal" id="modalRegister">
+  <div class="modal-box">
+    <h2>📝 Daftar Akun</h2>
+    <p>Buat akun untuk menyimpan poin dan badge kamu.</p>
+    <input type="text" id="regUser" placeholder="Username" autocomplete="off" maxlength="16">
+    <input type="password" id="regPass" placeholder="Password" autocomplete="off" maxlength="20">
+    <button class="btn btn-primary" id="btnRegister">Daftar</button>
+    <span class="link" id="linkLogin">Sudah punya akun? Masuk</span>
+    <div id="regMsg" style="font-size:11px;color:#ff6b6b;margin-top:10px;"></div>
+  </div>
+</div>
+
+<!-- Leaderboard Modal -->
+<div class="modal" id="modalLeaderboard">
+  <div class="modal-box">
+    <h2>🏆 Peringkat Siswa</h2>
+    <p>Berdasarkan total poin yang dikumpulkan</p>
+    <div id="lbList"></div>
+    <button class="btn btn-primary" id="btnCloseLb" style="margin-top:12px;">Tutup</button>
+  </div>
+</div>
+
+<!-- Badge Toast -->
+<div id="badgeToast"><span class="ico">🏅</span><span id="badgeText">Badge baru!</span></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+/* ============================================================
+   DATA UNSUR & SOAL
+   ============================================================ */
+const ELEMENTS = {
+  Na: { name:'Natrium', Z:11, shells:[2,8,1] },
+  Cl: { name:'Klorin',  Z:17, shells:[2,8,7] },
+  Ca: { name:'Kalsium', Z:20, shells:[2,8,8,2] }
+};
+
+// Bank soal per unsur (10 soal)
+const QUESTION_BANK = {
+  Na: [
+    { q:'Berapa jumlah elektron maksimum pada kulit K (n=1)?', o:['2','8','18','32'], a:0 },
+    { q:'Konfigurasi elektron atom Na (Z=11) adalah...', o:['2,8,1','2,8,2','2,8,8','2,9'], a:0 },
+    { q:'Berapa jumlah elektron valensi atom Na?', o:['1','2','3','8'], a:0 },
+    { q:'Kulit manakah yang terisi penuh pada atom Na?', o:['K dan L','K saja','L saja','M saja'], a:0 },
+    { q:'Jumlah maksimum elektron pada kulit L (n=2) adalah...', o:['8','2','18','32'], a:0 },
+    { q:'Elektron valensi Na berada pada kulit...', o:['M','K','L','N'], a:0 },
+    { q:'Mengapa Na cenderung melepas 1 elektron?', o:['Agar stabil seperti gas mulia','Agar bermuatan negatif','Agar kulit M penuh','Agar menjadi Cl'], a:0 },
+    { q:'Rumus jumlah maksimum elektron kulit ke-n adalah...', o:['2n²','n²','2n','4n'], a:0 },
+    { q:'Atom Na setelah melepas 1 elektron membentuk ion...', o:['Na⁺','Na⁻','Na²⁺','Na²⁻'], a:0 },
+    { q:'Konfigurasi ion Na⁺ adalah...', o:['2,8','2,8,1','2,7','2,8,2'], a:0 }
+  ],
+  Cl: [
+    { q:'Berapa jumlah elektron maksimum pada kulit M (n=3)?', o:['18','8','32','2'], a:0 },
+    { q:'Konfigurasi elektron atom Cl (Z=17) adalah...', o:['2,8,7','2,8,8','2,7,8','2,8,6'], a:0 },
+    { q:'Berapa jumlah elektron valensi atom Cl?', o:['7','8','1','2'], a:0 },
+    { q:'Kulit yang terisi penuh pada atom Cl adalah...', o:['K dan L','K saja','L saja','M saja'], a:0 },
+    { q:'Jumlah maksimum elektron kulit N (n=4) adalah...', o:['32','18','8','2'], a:0 },
+    { q:'Elektron valensi Cl berada pada kulit...', o:['M','K','L','N'], a:0 },
+    { q:'Cl cenderung menangkap 1 elektron agar...', o:['Stabil seperti gas mulia','Menjadi logam','Kulit M kosong','Bermuatan positif'], a:0 },
+    { q:'Atom Cl setelah menangkap 1 elektron membentuk ion...', o:['Cl⁻','Cl⁺','Cl²⁻','Cl²⁺'], a:0 },
+    { q:'Konfigurasi ion Cl⁻ adalah...', o:['2,8,8','2,8,7','2,8,6','2,7,8'], a:0 },
+    { q:'Unsur Cl terletak pada golongan...', o:['VIIA (halogen)','IA','IIA','VIIIA'], a:0 }
+  ],
+  Ca: [
+    { q:'Berapa jumlah elektron maksimum pada kulit N (n=4)?', o:['32','18','8','2'], a:0 },
+    { q:'Konfigurasi elektron atom Ca (Z=20) adalah...', o:['2,8,8,2','2,8,10','2,8,8,1','2,8,9'], a:0 },
+    { q:'Berapa jumlah elektron valensi atom Ca?', o:['2','8','1','4'], a:0 },
+    { q:'Kulit yang terisi penuh pada atom Ca adalah...', o:['K, L, dan M','K dan L','L dan M','K saja'], a:0 },
+    { q:'Jumlah maksimum elektron kulit M (n=3) adalah...', o:['18','8','32','2'], a:0 },
+    { q:'Elektron valensi Ca berada pada kulit...', o:['N','M','L','K'], a:0 },
+    { q:'Ca cenderung melepas 2 elektron agar...', o:['Stabil seperti gas mulia','Menjadi anion','Kulit N penuh','Menjadi Cl'], a:0 },
+    { q:'Atom Ca setelah melepas 2 elektron membentuk ion...', o:['Ca²⁺','Ca⁺','Ca²⁻','Ca⁻'], a:0 },
+    { q:'Konfigurasi ion Ca²⁺ adalah...', o:['2,8,8','2,8,8,2','2,8,7','2,8,10'], a:0 },
+    { q:'Unsur Ca terletak pada golongan...', o:['IIA','IA','IIIA','VIIIA'], a:0 }
+  ]
+};
+
+/* ============================================================
+   PENYIMPANAN DATA (localStorage sebagai JSON)
+   ============================================================ */
+const DB_KEY = 'atomBuilderDB_v1';
+
+function loadDB() {
+  try {
+    const raw = localStorage.getItem(DB_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch(e){}
+  return { users: {}, currentUser: null };
+}
+function saveDB(db) {
+  localStorage.setItem(DB_KEY, JSON.stringify(db));
+}
+let DB = loadDB();
+
+/* ============================================================
+   STATE APLIKASI
+   ============================================================ */
+const State = {
+  user: null,
+  targetKey: 'Na',
+  questions: [],
+  qIndex: 0,
+  electronsPlaced: 0,
+  answered: false,
+  wrongThisQuestion: false,
+  pointsEarned: 0,
+  badgesEarned: 0,
+  unstableTimer: null,
+  atomComplete: false
+};
+
+/* ============================================================
+   THREE.JS - WEBGL SCENE
+   ============================================================ */
+let scene, camera, renderer, nucleus, shellMeshes = [], orbitingElectrons = [];
+let clock, animationId;
+let shakeIntensity = 0;
+let electronLossAnim = null;
+
+function initThree() {
+  const canvas = document.getElementById('glCanvas');
+  renderer = new THREE.WebGLRenderer({ canvas, antialias:true, alpha:true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setSize(window.innerWidth, window.innerHeight);
+
+  scene = new THREE.Scene();
+  scene.fog = new THREE.FogExp2(0x05060f, 0.035);
+
+  camera = new THREE.PerspectiveCamera(55, window.innerWidth/window.innerHeight, 0.1, 200);
+  camera.position.set(0, 4, 16);
+  camera.lookAt(0, 0, 0);
+
+  // Lighting
+  scene.add(new THREE.AmbientLight(0x334466, 1.2));
+  const p1 = new THREE.PointLight(0x00b4ff, 2.5, 50); p1.position.set(6,6,8); scene.add(p1);
+  const p2 = new THREE.PointLight(0x7b2ff7, 2, 50); p2.position.set(-8,-4,-6); scene.add(p2);
+  const p3 = new THREE.PointLight(0x00ffa3, 1.2, 40); p3.position.set(0,-8,4); scene.add(p3);
+
+  // Nucleus
+  nucleus = new THREE.Group();
+  const nucGeo = new THREE.SphereGeometry(1.15, 32, 32);
+  const nucMat = new THREE.MeshPhongMaterial({
+    color:0xff4466, emissive:0xff2244, emissiveIntensity:0.7,
+    shininess:80, specular:0xffffff
+  });
+  const nucMesh = new THREE.Mesh(nucGeo, nucMat);
+  nucleus.add(nucMesh);
+
+  // Glow around nucleus
+  const glowMat = new THREE.MeshBasicMaterial({
+    color:0xff6688, transparent:true, opacity:0.18, side:THREE.BackSide
+  });
+  const glow = new THREE.Mesh(new THREE.SphereGeometry(1.6, 24, 24), glowMat);
+  nucleus.add(glow);
+  scene.add(nucleus);
+
+  // Starfield background
+  const starGeo = new THREE.BufferGeometry();
+  const starCount = 800;
+  const positions = new Float32Array(starCount*3);
+  for (let i=0;i<starCount;i++){
+    positions[i*3]   = (Math.random()-0.5)*120;
+    positions[i*3+1] = (Math.random()-0.5)*120;
+    positions[i*3+2] = (Math.random()-0.5)*120;
+  }
+  starGeo.setAttribute('position', new THREE.BufferAttribute(positions,3));
+  const starMat = new THREE.PointsMaterial({ color:0x88bbff, size:0.25, transparent:true, opacity:0.6 });
+  scene.add(new THREE.Points(starGeo, starMat));
+
+  clock = new THREE.Clock();
+  animate();
+}
+
+function buildShells(shellConfig) {
+  // Hapus shell lama
+  shellMeshes.forEach(s => scene.remove(s));
+  shellMeshes = [];
+
+  const colors = [0x00d4ff, 0x7b2ff7, 0x00ffa3, 0xffaa00];
+  const baseRadius = 2.6;
+  const gap = 1.5;
+
+  shellConfig.forEach((cap, i) => {
+    const r = baseRadius + i*gap;
+    // Ring (torus) sebagai lintasan
+    const ringGeo = new THREE.TorusGeometry(r, 0.035, 8, 80);
+    const ringMat = new THREE.MeshBasicMaterial({
+      color: colors[i % colors.length], transparent:true, opacity:0.55
+    });
+    const ring = new THREE.Mesh(ringGeo, ringMat);
+    ring.rotation.x = Math.PI/2;
+    ring.userData = { radius:r, color:colors[i % colors.length], shellIndex:i, capacity:cap };
+    scene.add(ring);
+    shellMeshes.push(ring);
+  });
+}
+
+function addElectron(shellIndex, totalInShell) {
+  // shellIndex = 0 (K), 1 (L), dst
+  if (shellIndex >= shellMeshes.length) return;
+  const shell = shellMeshes[shellIndex];
+  const r = shell.userData.radius;
+  const color = shell.userData.color;
+
+  const geo = new THREE.SphereGeometry(0.22, 16, 16);
+  const mat = new THREE.MeshPhongMaterial({
+    color: color, emissive: color, emissiveIntensity:1.2, shininess:100
+  });
+  const e = new THREE.Mesh(geo, mat);
+
+  // Posisi awal: sudut tersebar
+  const angle = (totalInShell / shell.userData.capacity) * Math.PI * 2;
+  const tilt = shellIndex * 0.4;
+  e.userData = {
+    radius: r,
+    angle: angle,
+    speed: 0.9 + shellIndex*0.25,
+    tilt: tilt,
+    shellIndex: shellIndex
+  };
+  // Set posisi awal
+  updateElectronPosition(e);
+  scene.add(e);
+  orbitingElectrons.push(e);
+
+  // Animasi "pop" masuk
+  e.scale.set(0.1,0.1,0.1);
+  const start = performance.now();
+  function popAnim(t){
+    const p = Math.min((t-start)/350, 1);
+    const s = p < 0.5 ? p*2 : 1 + Math.sin((p-0.5)*Math.PI)*0.3;
+    e.scale.set(s,s,s);
+    if (p < 1) requestAnimationFrame(popAnim);
+    else e.scale.set(1,1,1);
+  }
+  requestAnimationFrame(popAnim);
+}
+
+function updateElectronPosition(e) {
+  const u = e.userData;
+  const x = Math.cos(u.angle) * u.radius;
+  const z = Math.sin(u.angle) * u.radius;
+  // Tilt orbit
+  const y = Math.sin(u.angle) * u.radius * Math.sin(u.tilt);
+  const zz = Math.sin(u.angle) * u.radius * Math.cos(u.tilt);
+  e.position.set(x, y, zz);
+}
+
+function removeLastElectron() {
+  // Animasi elektron terlepas
+  if (orbitingElectrons.length === 0) return;
+  const e = orbitingElectrons.pop();
+  const start = performance.now();
+  const startPos = e.position.clone();
+  const dir = startPos.clone().normalize();
+  function fly(t){
+    const p = Math.min((t-start)/600, 1);
+    const dist = p * 20;
+    e.position.copy(startPos).add(dir.multiplyScalar(dist));
+    e.material.opacity = 1-p;
+    e.material.transparent = true;
+    e.scale.multiplyScalar(0.97);
+    if (p < 1) requestAnimationFrame(fly);
+    else scene.remove(e);
+  }
+  requestAnimationFrame(fly);
+}
+
+function clearAllElectrons() {
+  orbitingElectrons.forEach(e => scene.remove(e));
+  orbitingElectrons = [];
+}
+
+function animate() {
+  animationId = requestAnimationFrame(animate);
+  const dt = clock.getDelta();
+  const t = clock.elapsedTime;
+
+  // Rotasi inti
+  nucleus.rotation.y += dt * 0.4;
+  nucleus.rotation.x += dt * 0.15;
+
+  // Getaran inti jika tidak stabil
+  if (shakeIntensity > 0.01) {
+    nucleus.position.x = (Math.random()-0.5) * shakeIntensity;
+    nucleus.position.y = (Math.random()-0.5) * shakeIntensity;
+    nucleus.position.z = (Math.random()-0.5) * shakeIntensity;
+    shakeIntensity *= 0.96;
+  } else {
+    nucleus.position.set(0,0,0);
+    shakeIntensity = 0;
+  }
+
+  // Gerak elektron
+  orbitingElectrons.forEach(e => {
+    e.userData.angle += dt * e.userData.speed;
+    updateElectronPosition(e);
+  });
+
+  // Rotasi ring
+  shellMeshes.forEach((s,i) => {
+    s.rotation.z += dt * 0.1 * (i+1);
+  });
+
+  // Kamera sedikit orbit
+  camera.position.x = Math.sin(t*0.15) * 1.5;
+  camera.position.y = 4 + Math.sin(t*0.2) * 0.8;
+  camera.lookAt(0,0,0);
+
+  renderer.render(scene, camera);
+}
+
+function onResize() {
+  if (!renderer) return;
+  camera.aspect = window.innerWidth/window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+}
+window.addEventListener('resize', onResize);
+
+/* ============================================================
+   LOGIKA GAME
+   ============================================================ */
+function shuffleArray(arr) {
+  const a = [...arr];
+  for (let i=a.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]] = [a[j],a[i]];
+  }
+  return a;
+}
+
+function pickTarget() {
+  const keys = Object.keys(ELEMENTS);
+  return keys[Math.floor(Math.random()*keys.length)];
+}
+
+function startNewAtom() {
+  State.targetKey = pickTarget();
+  const el = ELEMENTS[State.targetKey];
+  State.questions = shuffleArray(QUESTION_BANK[State.targetKey]).slice(0,10);
+  State.qIndex = 0;
+  State.electronsPlaced = 0;
+  State.answered = false;
+  State.wrongThisQuestion = false;
+  State.pointsEarned = 0;
+  State.atomComplete = false;
+
+  // Reset UI
+  document.getElementById('targetAtom').textContent = `${el.name} (${State.targetKey})`;
+  document.getElementById('electronCount').textContent = '0';
+  document.getElementById('electronTarget').textContent = el.Z;
+  document.getElementById('btnNext').disabled = true;
+  document.getElementById('btnNext').textContent = 'Lanjut';
+  hideFeedback();
+  updateShellChips();
+
+  // Reset 3D
+  clearAllElectrons();
+  buildShells(el.shells);
+
+  renderQuestion();
+}
+
+function updateShellChips() {
+  const el = ELEMENTS[State.targetKey];
+  const container = document.getElementById('shells');
+  container.innerHTML = '';
+  const shellNames = ['K','L','M','N'];
+
+  // Hitung elektron per shell berdasarkan electronsPlaced
+  const counts = new Array(el.shells.length).fill(0);
+  let remaining = State.electronsPlaced;
+  for (let i=0;i<el.shells.length;i++){
+    const fill = Math.min(remaining, el.shells[i]);
+    counts[i] = fill;
+    remaining -= fill;
+  }
+
+  el.shells.forEach((cap, i) => {
+    const chip = document

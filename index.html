@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>GrowChem - Teori Asam Basa</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
+  body {
+    background: linear-gradient(160deg, #1a3a1a 0%, #0a1f0a 100%);
+    min-height: 100vh;
+    display: flex; justify-content: center; align-items: center;
+    padding: 8px;
+  }
+  .app {
+    width: 100%; max-width: 420px; height: 98vh; max-height: 850px;
+    background: #f5f9f0;
+    border-radius: 30px;
+    overflow: hidden;
+    display: flex; flex-direction: column;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.7), 0 0 0 2px #6b8c5c;
+    position: relative;
+  }
+  .screen { flex: 1; display: none; flex-direction: column; padding: 16px; overflow-y: auto; }
+  .screen.active { display: flex; }
+  h2 { color: #2b4f1e; font-size: 1.6rem; text-align: center; margin-bottom: 4px; }
+  .sub { text-align: center; color: #4a6b3a; font-size: 0.85rem; margin-bottom: 14px; }
+  .card {
+    background: #fff;
+    border-radius: 22px;
+    padding: 18px 16px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+    border: 1px solid #d8e8cc;
+  }
+  input {
+    width: 100%; padding: 13px 16px;
+    border: 1.5px solid #b8d4a8; border-radius: 40px;
+    font-size: 1rem; margin-bottom: 10px; outline: none; background: #fefefe;
+  }
+  input:focus { border-color: #4caf50; box-shadow: 0 0 0 3px rgba(76,175,80,0.2); }
+  button {
+    width: 100%; padding: 13px;
+    border: none; border-radius: 40px;
+    background: #2e7d32; color: #fff;
+    font-size: 1rem; font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 4px 0 #1b5e20;
+    transition: 0.1s;
+  }
+  button:active { transform: translateY(3px); box-shadow: 0 1px 0 #1b5e20; }
+  button.secondary { background: #7e9f6e; box-shadow: 0 4px 0 #4a6b3a; }
+  button:disabled { opacity: 0.6; cursor: not-allowed; }
+  .msg { text-align: center; font-size: 0.8rem; min-height: 18px; margin-top: 6px; color: #b71c1c; }
+  .topbar {
+    display: flex; justify-content: space-between; align-items: center;
+    background: #2e4d1e; color: #e8f5e0;
+    padding: 10px 14px; border-radius: 40px;
+    font-size: 0.85rem; font-weight: 500;
+    margin-bottom: 12px;
+  }
+  .topbar span { background: #1e3a12; padding: 5px 12px; border-radius: 30px; }
+  #canvas-box {
+    width: 100%; height: 190px;
+    background: #cfe9c4; border-radius: 22px;
+    overflow: hidden; margin-bottom: 10px;
+    box-shadow: inset 0 4px 12px rgba(0,0,0,0.1);
+    flex-shrink: 0;
+  }
+  #canvas-box canvas { display: block; width: 100%; height: 100%; }
+  .progress {
+    background: #eef6e8; border-radius: 40px;
+    padding: 8px 14px; text-align: center;
+    font-size: 0.8rem; font-weight: 600; color: #2b4f1e;
+    margin-bottom: 10px;
+  }
+  .question {
+    font-size: 0.98rem; font-weight: 500; color: #1e3a12;
+    line-height: 1.45; margin-bottom: 12px; min-height: 64px;
+  }
+  .options { display: flex; flex-direction: column; gap: 8px; }
+  .option-btn {
+    background: #fff; border: 1.5px solid #cfe2c4;
+    border-radius: 14px; padding: 12px 14px;
+    text-align: left; font-size: 0.9rem; font-weight: 500;
+    color: #1e3a12; cursor: pointer; transition: 0.1s;
+    box-shadow: 0 2px 0 #d0e0c8;
+  }
+  .option-btn:active { transform: translateY(2px); box-shadow: none; }
+  .option-btn.correct { background: #c8e6c9; border-color: #2e7d32; }
+  .option-btn.wrong { background: #ffcdd2; border-color: #b71c1c; }
+  .option-btn:disabled { cursor: default; }
+  .badge-wrap { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin: 8px 0; }
+  .badge {
+    background: #ffd54f; color: #3e2c00;
+    padding: 7px 12px; border-radius: 30px;
+    font-size: 0.75rem; font-weight: 700;
+    box-shadow: 0 3px 0 #c49b00;
+    display: inline-flex; align-items: center; gap: 4px;
+  }
+  .empty-badge { color: #8aa87c; font-size: 0.8rem; font-style: italic; }
+  .lb-list { list-style: none; margin-top: 8px; }
+  .lb-item {
+    display: flex; justify-content: space-between;
+    background: #fff; padding: 11px 16px;
+    border-radius: 40px; margin-bottom: 6px;
+    font-size: 0.9rem; font-weight: 500;
+    border: 1px solid #b8d4a8;
+  }
+  .lb-item .rank { font-weight: 700; color: #2e7d32; margin-right: 6px; }
+  .lb-item.me { background: #fff9c4; border-color: #ffd54f; }
+  .link { text-align: center; font-size: 0.82rem; color: #6b8c5c; text-decoration: underline; cursor: pointer; margin-top: 10px; }
+  .row { display: flex; gap: 8px; margin-top: 10px; }
+  .row button { flex: 1; font-size: 0.9rem; padding: 12px; }
+  .hidden { display: none !important; }
+  .toast {
+    position: absolute; bottom: 24px; left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: #1e3a12ee; color: #e8f5e0;
+    padding: 10px 20px; border-radius: 40px;
+    font-size: 0.82rem; font-weight: 500;
+    opacity: 0; transition: 0.3s; pointer-events: none;
+    z-index: 999; white-space: nowrap; max-width: 90%;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .result-emoji { font-size: 4rem; text-align: center; margin: 6px 0; }
+  .scroll { flex: 1; overflow-y: auto; }
+</style>
+</head>
+<body>
+<div class="app" id="app">
+
+  <!-- ============ LOGIN ============ -->
+  <div class="screen active" id="screen-login">
+    <h2>🌱 GrowChem</h2>
+    <p class="sub">Teori Asam Basa • Arrhenius • Brønsted-Lowry • Lewis</p>
+    <div class="card">
+      <input type="text" id="inUser" placeholder="Username" autocomplete="off" maxlength="16">
+      <input type="password" id="inPass" placeholder="Password" autocomplete="off" maxlength="24">
+      <button id="btnLogin">Masuk</button>
+      <button id="btnRegister" class="secondary" style="margin-top:8px;">Daftar Akun Baru</button>
+      <div class="msg" id="loginMsg"></div>
+    </div>
+  </div>
+
+  <!-- ============ MENU ============ -->
+  <div class="screen" id="screen-menu">
+    <div class="topbar">
+      <span id="menuName">Siswa</span>
+      <span id="menuPts">0 poin</span>
+    </div>
+    <h2 style="font-size:1.3rem;">🌿 Kebun Kimia</h2>
+    <p class="sub">Tanam pengetahuanmu tentang asam basa</p>
+    <div class="card" style="text-align:center;">
+      <div style="font-weight:600; color:#2b4f1e; font-size:0.9rem; margin-bottom:6px;">Badge Kamu</div>
+      <div class="badge-wrap" id="menuBadges"></div>
+    </div>
+    <button id="btnStart" style="margin-top:14px;">Mulai Menanam 🌱</button>
+    <button id="btnLb" class="secondary" style="margin-top:8px;">🏆 Peringkat</button>
+    <div class="link" id="btnLogout">Keluar Akun</div>
+  </div>
+
+  <!-- ============ GAME ============ -->
+  <div class="screen" id="screen-game">
+    <div class="topbar">
+      <span id="gameName">Siswa</span>
+      <span id="gamePts">0 poin</span>
+    </div>
+    <div id="canvas-box"></div>
+    <div class="progress" id="progress">Soal 1 dari 10</div>
+    <div class="card">
+      <div class="question" id="question">Memuat soal...</div>
+      <div class="options" id="options"></div>
+      <div class="msg" id="feedback" style="color:#2e7d32;"></div>
+    </div>
+    <button id="btnNext" class="hidden" style="margin-top:10px;">Lanjut ➡️</button>
+    <button id="btnQuit" class="secondary" style="margin-top:6px;">Kembali ke Menu</button>
+  </div>
+
+  <!-- ============ RESULT ============ -->
+  <div class="screen" id="screen-result">
+    <div class="topbar">
+      <span id="resName">Siswa</span>
+      <span id="resPts">0 poin</span>
+    </div>
+    <div class="card" style="text-align:center;">
+      <h2 id="resTitle" style="font-size:1.4rem;">🌻 Tanaman Berbunga!</h2>
+      <div class="result-emoji" id="resEmoji">🌻</div>
+      <p id="resDesc" style="color:#2b4f1e; font-size:0.9rem; margin-bottom:10px;">Kamu berhasil menumbuhkan tanaman.</p>
+      <div class="badge-wrap" id="resBadges"></div>
+      <button id="btnBack" style="margin-top:12px;">Kembali ke Kebun</button>
+    </div>
+  </div>
+
+  <!-- ============ LEADERBOARD ============ -->
+  <div class="screen" id="screen-lb">
+    <div class="topbar">
+      <span>🏆 Peringkat Siswa</span>
+      <span id="lbPts">0 poin</span>
+    </div>
+    <div class="scroll">
+      <ul class="lb-list" id="lbList"></ul>
+    </div>
+    <button id="btnCloseLb" class="secondary" style="margin-top:10px;">Tutup</button>
+  </div>
+
+  <div class="toast" id="toast"></div>
+</div>
+
+<!-- Three.js (WebGL) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+/* =========================================================
+   PENYIMPANAN DATA (JSON via localStorage)
+   Struktur: { users: { username: { password, points, badges[] } } }
+========================================================= */
+const DB_KEY = 'growchem_db_v1';
+
+function loadDB() {
+  try {
+    const raw = localStorage.getItem(DB_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch (e) {}
+  return { users: {} };
+}
+function saveDB(db) {
+  localStorage.setItem(DB_KEY, JSON.stringify(db));
+}
+let DB = loadDB();
+let currentUser = null;
+
+/* =========================================================
+   SOAL KUIS (10 soal - Teori Asam Basa)
+========================================================= */
+const QUESTIONS = [
+  {
+    q: "Menurut teori Arrhenius, asam adalah zat yang dalam air menghasilkan ion...",
+    options: ["H⁺", "OH⁻", "Na⁺", "Cl⁻"],
+    correct: 0,
+    explain: "Arrhenius: asam menghasilkan H⁺ dalam air."
+  },
+  {
+    q: "Menurut teori Arrhenius, basa adalah zat yang dalam air menghasilkan ion...",
+    options: ["OH⁻", "H⁺", "H₃O⁺", "Cl⁻"],
+    correct: 0,
+    explain: "Arrhenius: basa menghasilkan OH⁻ dalam air."
+  },
+  {
+    q: "Menurut Brønsted-Lowry, asam adalah...",
+    options: ["Donor proton (H⁺)", "Akseptor proton (H⁺)", "Akseptor elektron", "Donor elektron"],
+    correct: 0,
+    explain: "Asam Brønsted-Lowry = donor proton."
+  },
+  {
+    q: "Menurut Brønsted-Lowry, basa adalah...",
+    options: ["Akseptor proton (H⁺)", "Donor proton (H⁺)", "Akseptor elektron", "Donor elektron"],
+    correct: 0,
+    explain: "Basa Brønsted-Lowry = akseptor proton."
+  },
+  {
+    q: "Menurut teori Lewis, asam adalah spesi yang...",
+    options: ["Menerima pasangan elektron", "Memberi pasangan elektron", "Melepas H⁺", "Menerima H⁺"],
+    correct: 0,
+    explain: "Asam Lewis = akseptor pasangan elektron."
+  },
+  {
+    q: "Menurut teori Lewis, basa adalah spesi yang...",
+    options: ["Memberi pasangan elektron", "Menerima pasangan elektron", "Melepas OH⁻", "Menerima H⁺"],
+    correct: 0,
+    explain: "Basa Lewis = donor pasangan elektron."
+  },
+  {
+    q: "Spesi yang bersifat amfiprotik (dapat bertindak sebagai asam maupun basa) adalah...",
+    options: ["H₂O", "HCl", "NaOH", "CH₄"],
+    correct: 0,
+    explain: "Air dapat mendonorkan atau menerima proton."
+  },
+  {
+    q: "Pada reaksi NH₃ + H₂O ⇌ NH₄⁺ + OH⁻, yang bertindak sebagai asam menurut Brønsted-Lowry adalah...",
+    options: ["H₂O", "NH₃", "NH₄⁺", "OH⁻"],
+    correct: 0,
+    explain: "H₂O mendonorkan proton ke NH₃ sehingga H₂O = asam."
+  },
+  {
+    q: "Contoh asam Lewis adalah...",
+    options: ["BF₃", "NH₃", "H₂O", "OH⁻"],
+    correct: 0,
+    explain: "BF₃ dapat menerima pasangan elektron."
+  },
+  {
+    q: "Pasangan asam-basa konjugasi dari HSO₄⁻ adalah...",
+    options: ["SO₄²⁻", "H₂SO₄", "H₃O⁺", "OH⁻"],
+    correct: 0,
+    explain: "HSO₄⁻ melepas H⁺ menjadi SO₄²⁻ (basa konjugasinya)."
+  }
+];
+
+/* =========================================================
+   STATE GAME
+========================================================= */
+let qIndex = 0;
+let correctCount = 0;
+let answered = false;
+let gameActive = false;
+let plantLevel = 0; // 0..10
+let scene, camera, renderer, plantGroup;
+let animId = null;
+
+/* =========================================================
+   UI HELPERS
+========================================================= */
+const $ = (id) => document.getElementById(id);
+const screens = {
+  login: $('screen-login'),
+  menu: $('screen-menu'),
+  game: $('screen-game'),
+  result: $('screen-result'),
+  lb: $('screen-lb')
+};
+function showScreen(name) {
+  Object.values(screens).forEach(s => s.classList.remove('active'));
+  screens[name].classList.add('active');
+}
+let toastTimer;
+function toast(msg) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+/* =========================================================
+   LOGIN / REGISTER / LOGOUT
+========================================================= */
+$('btnLogin').onclick = () => {
+  const u = $('inUser').value.trim();
+  const p = $('inPass').value.trim();
+  const msg = $('loginMsg');
+  msg.style.color = '#b71c1c';
+  if (!u || !p) { msg.textContent = 'Isi username dan password!'; return; }
+  if (!DB.users[u]) { msg.textContent = 'Akun tidak ditemukan. Silakan daftar.'; return; }
+  if (DB.users[u].password !== p) { msg.textContent = 'Password salah.'; return; }
+  currentUser = u;
+  msg.textContent = '';
+  refreshMenu();
+  showScreen('menu');
+};
+
+$('btnRegister').onclick = () => {
+  const u = $('inUser').value.trim();
+  const p = $('inPass').value.trim();
+  const msg = $('loginMsg');
+  if (!u || !p) { msg.style.color = '#b71c1c'; msg.textContent = 'Isi username dan password!'; return; }
+  if (u.length < 3) { msg.style.color = '#b71c1c'; msg.textContent = 'Username minimal 3 karakter.'; return; }
+  if (p.length < 4) { msg.style.color = '#b71c1c'; msg.textContent = 'Password minimal 4 karakter.'; return; }
+  if (DB.users[u]) { msg.style.color = '#b71c1c'; msg.textContent = 'Username sudah dipakai.'; return; }
+  DB.users[u] = { password: p, points: 0, badges: [] };
+  saveDB(DB);
+  msg.style.color = '#2e7d32';
+  msg.textContent = 'Akun berhasil dibuat! Silakan klik Masuk.';
+};
+
+$('btnLogout').onclick = () => {
+  currentUser = null;
+  $('inUser').value = '';
+  $('inPass').value = '';
+  $('loginMsg').textContent = '';
+  showScreen('login');
+};
+
+/* =========================================================
+   MENU
+========================================================= */
+function refreshMenu() {
+  if (!currentUser) return;
+  const u = DB.users[currentUser];
+  $('menuName').textContent = 'Halo, ' + currentUser;
+  $('menuPts').textContent = u.points + ' poin';
+  const wrap = $('menuBadges');
+  wrap.innerHTML = '';
+  if (!u.badges || u.badges.length === 0) {
+    wrap.innerHTML = '<span class="empty-badge">Belum ada badge</span>';
+  } else {
+    u.badges.forEach(b => {
+      const s = document.createElement('span');
+      s.className = 'badge';
+      s.textContent = '🏅 ' + b;
+      wrap.appendChild(s);
+    });
+  }
+}
+
+$('btnStart').onclick = () => startGame();
+$('btnLb').onclick = () => { renderLeaderboard(); showScreen('lb'); };
+$('btnCloseLb').onclick = () => showScreen('menu');
+
+/* =========================================================
+   LEADERBOARD
+========================================================= */
+function renderLeaderboard() {
+  const list = $('lbList');
+  list.innerHTML = '';
+  const arr = Object.keys(DB.users).map(name => ({
+    name,
+    points: DB.users[name].points || 0,
+    badges: (DB.users[name].badges || []).length
+  }));
+  arr.sort((a, b) => b.points - a.points);
+  if (arr.length === 0) {
+    list.innerHTML = '<li class="lb-item">Belum ada pemain.</li>';
+  } else {
+    arr.forEach((u, i) => {
+      const li = document.createElement('li');
+      li.className = 'lb-item' + (u.name === currentUser ? ' me' : '');
+      li.innerHTML = `<span><span class="rank">#${i+1}</span>${u.name} ${u.badges ? '🏅' + u.badges : ''}</span><span>${u.points} poin</span>`;
+      list.appendChild(li);
+    });
+  }
+  $('lbPts').textContent = (DB.users[currentUser]?.points || 0) + ' poin';
+}
+
+/* =========================================================
+   GAME START
+========================================================= */
+function startGame() {
+  if (!currentUser) return;
+  qIndex = 0;
+  correctCount = 0;
+  answered = false;
+  gameActive = true;
+  plantLevel = 0;
+  $('gameName').textContent = currentUser;
+  $('gamePts').textContent = DB.users[currentUser].points + ' poin';
+  $('feedback').textContent = '';
+  $('btnNext').classList.add('hidden');
+  initThree();
+  loadQuestion();
+  showScreen('game');
+}
+
+function loadQuestion() {
+  if (qIndex >= QUESTIONS.length) { endGame(); return; }
+  answered = false;
+  const q = QUESTIONS[qIndex];
+  $('progress').textContent = `Soal ${qIndex + 1} dari 10  •  Benar: ${correctCount}`;
+  $('question').textContent = q.q;
+  const box = $('options');
+  box.innerHTML = '';
+  q.options.forEach((opt, i) => {
+    const b = document.createElement('button');
+    b.className = 'option-btn';
+    b.textContent = opt;
+    b.onclick = () => selectAnswer(i, b);
+    box.appendChild(b);
+  });
+  $('btnNext').classList.add('hidden');
+  $('feedback').textContent = '';
+}
+
+function selectAnswer(idx, btn) {
+  if (answered || !gameActive) return;
+  answered = true;
+  const q = QUESTIONS[qIndex];
+  const all = document.querySelectorAll('.option-btn');
+  all.forEach(b => b.disabled = true);
+
+  if (idx === q.correct) {
+    btn.classList.add('correct');
+    correctCount++;
+    plantLevel = correctCount;
+    DB.users[currentUser].points += 10;
+    saveDB(DB);
+    $('gamePts').textContent = DB.users[currentUser].points + ' poin';
+    $('feedback').style.color = '#2e7d32';
+    $('feedback').textContent = '✅ Benar! Tanaman tumbuh. ' + q.explain;
+    drawPlant(plantLevel);
+    toast('🌱 Tanaman tumbuh! +10 poin');
+  } else {
+    btn.classList.add('wrong');
+    all[q.correct].classList.add('correct');
+    $('feedback').style.color = '#b71c1c';
+    $('feedback').textContent = '❌ Salah. Tanaman tidak tumbuh. ' + q.explain;
+    toast('❌ Salah, tanaman tidak tumbuh');
+    // Tanaman tidak tumbuh -> siswa akan mengulang soal ini
+  }
+
+  $('progress').textContent = `Soal ${qIndex + 1} dari 10  •  Benar: ${correctCount}`;
+
+  if (idx !== q.correct) {
+    // Jika salah: ulangi soal yang sama (tanaman tidak tumbuh)
+    setTimeout(() => {
+      answered = false;
+      // reset pilihan
+      const box = $('options');
+      box.innerHTML = '';
+      q.options.forEach((opt, i) => {
+        const b = document.createElement('button');
+        b.className = 'option-btn';
+        b.textContent = opt;
+        b.onclick = () => selectAnswer(i, b);
+        box.appendChild(b);
+      });
+      $('feedback').textContent = '🔁 Ayo coba lagi soal ini!';
+      $('feedback').style.color = '#e65100';
+    }, 1500);
+  } else {
+    // Jika benar: lanjut ke soal berikutnya
+    if (qIndex < QUESTIONS.length - 1) {
+      $('btnNext').classList.remove('hidden');
+    } else {
+      setTimeout(endGame, 1200);
+    }
+  }
+}
+
+$('btnNext').onclick = () => {
+  qIndex++;
+  loadQuestion();
+};
+
+$('btnQuit').onclick = () => {
+  gameActive = false;
+  if (animId) cancelAnimationFrame(animId);
+  refreshMenu();
+  showScreen('menu');
+};
+
+/* =========================================================
+   END GAME + BADGE
+========================================================= */
+function endGame() {
+  gameActive = false;
+  if (animId) cancelAnimationFrame(animId);
+  const u = DB.users[currentUser];
+  const perfect = correctCount === 10;
+
+  // Badge diberikan jika tanaman berhasil berbunga & berbuah (10 benar)
+  if (perfect) {
+    const badgeName = "telah menumbuhkan tanaman 1 kali";
+    if (!u.badges.includes(badgeName)) {
+      u.badges.push(badgeName);
+      saveDB(DB);
+    }
+  }
+
+  $('resName').textContent = currentUser;
+  $('resPts').textContent = u.points + ' poin';
+  const title = $('resTitle'), emoji = $('resEmoji'), desc = $('resDesc'), bw = $('resBadges');
+  bw.innerHTML = '';
+
+  if (perfect) {
+    title.textContent = '🌸 Tanaman Berbunga & Berbuah!';
+    emoji.textContent = '🌻🍎';
+    desc.textContent = 'Luar biasa! Semua jawaban benar. Kamu mendapat badge!';
+  } else {
+    title.textContent = '🌿 Tanaman Tumbuh Sebagian';
+    emoji.textContent = '🌱';
+    desc.textContent = `Kamu menjawab benar ${correctCount} dari 10 soal. Terus belajar!`;
+  }
+
+  if (u.badges.length === 0) {
+    bw.innerHTML = '<span class="empty-badge">Belum ada badge</span>';
+  } else {
+    u.badges.forEach(b => {
+      const s = document.createElement('span');
+      s.className = 'badge';
+      s.textContent = '🏅 ' + b;
+      bw.appendChild(s);
+    });
+  }
+
+  showScreen('result');
+}
+
+$('btnBack').onclick = () => {
+  refreshMenu();
+  showScreen('menu');
+};
+
+/* =========================================================
+   WEBGL - THREE.JS TANAMAN
+========================================================= */
+function initThree() {
+  const box = $('canvas-box');
+  box.innerHTML = '';
+  const W = box.clientWidth, H = box.clientHeight;
+
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0xcfe9c4);
+
+  camera = new THREE.PerspectiveCamera(45, W / H, 0.1, 100);
+  camera.position.set(0, 1.6, 5.2);
+  camera.lookAt(0, 1.0, 0);
+
+  renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setSize(W, H);
+  renderer.shadowMap.enabled = true;
+  box.appendChild(renderer.domElement);
+
+  // Cahaya
+  scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+  const dir = new THREE.DirectionalLight(0xffffff, 0.85);
+  dir.position.set(5, 10, 7);
+  dir.castShadow = true;
+  scene.add(dir);
+
+  // Tanah
+  const ground = new THREE.Mesh(
+    new THREE.CircleGeometry(3, 32),
+    new THREE.MeshStandardMaterial({ color: 0x6b8c5c })
+  );
+  ground.rotation.x = -Math.PI / 2;
+  ground.position.y = -0.02;
+  ground.receiveShadow = true;
+  scene.add(ground);
+
+  const soil = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.8, 0.95, 0.3, 20),
+    new THREE.MeshStandardMaterial({ color: 0x5d4037 })
+  );
+  soil.position.y = 0.12;
+  soil.castShadow = true;
+  soil.receiveShadow = true;
+  scene.add(soil);
+
+  plantGroup = new THREE.Group();
+  scene.add(plantGroup);
+  drawPlant(0);
+
+  const onResize = () => {
+    const w = box.clientWidth, h = box.clientHeight;
+    renderer.setSize(w, h);
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+  };
+  window.addEventListener('resize', onResize);
+
+  animate();
+}
+
+function animate() {
+  animId = requestAnimationFrame(animate);
+  if (plantGroup) plantGroup.rotation.y += 0.006;
+  if (renderer && scene && camera) renderer.render(scene, camera);
+}
+
+/* =========================================================
+   GAMBAR TANAMAN BERDASARKAN LEVEL (0..10)
+========================================================= */
+function drawPlant(level) {
+  if (!plantGroup) return;
+  while (plantGroup.children.length) plantGroup.remove(plantGroup.children[0]);
+
+  if (level === 0) {
+    // Biji
+    const seed = new THREE.Mesh(
+      new THREE.SphereGeometry(0.13, 10, 10),
+      new THREE.MeshStandardMaterial({ color: 0x8d6e63 })
+    );
+    seed.position.y = 0.3;
+    seed.castShadow = true;
+    plantGroup.add(seed);
+    return;
+  }
+
+  // Batang
+  const stemH = 0.4 + (level / 10) * 1.9;
+  const stem = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.045, 0.07, stemH, 8),
+    new THREE.MeshStandardMaterial({ color: 0x4caf50 })
+  );
+  stem.position.y = 0.25 + stemH / 2;
+  stem.castShadow = true;
+  plantGroup.add(stem);
+
+  // Daun
+  if (level >= 2) {
+    const leaves = Math.min(level - 1, 6);
+    for (let i = 0; i < leaves; i++) {
+      const geo = new THREE.SphereGeometry(0.16, 7, 7);
+      geo.scale(1, 0.28, 0.55);
+      const leaf = new THREE.Mesh(
+        geo,
+        new THREE.MeshStandardMaterial({ color: 0x66bb6a })
+      );
+      const angle = (i / leaves) * Math.PI * 2;
+      const y = 0.35 + (i / leaves) * stemH * 0.8;
+      leaf.position.set(Math.cos(angle) * 0.26, y, Math.sin(angle) * 0.26);
+      leaf.rotation.y = angle;
+      leaf.rotation.z = 0.35;
+      leaf.castShadow = true;
+      plantGroup.add(leaf);
+    }
+  }
+
+  // Bunga (muncul saat level >= 8)
+  if (level >= 8) {
+    const flower = new THREE.Group();
+    const petals = 6;
+    for (let i = 0; i < petals; i++) {
+      const pGeo = new THREE.SphereGeometry(0.13, 7, 7);
+      pGeo.scale(1, 0.4, 0.65);
+      const petal = new THREE.Mesh(
+        pGeo,
+        new THREE.MeshStandardMaterial({ color: 0xffb74d })
+      );
+      const a = (i / petals) * Math.PI * 2;
+      petal.position.set(Math.cos(a) * 0.18, 0, Math.sin(a) * 0.18);
+      petal.rotation.y = a;
+      petal.castShadow = true;
+      flower.add(petal);
+    }
+    const center = new THREE.Mesh(
+      new THREE.SphereGeometry(0.1, 7, 7),
+      new THREE.MeshStandardMaterial({ color: 0xffeb3b })
+    );
+    center.castShadow = true;
+    flower.add(center);
+    flower.position.y = 0.25 + stemH;
+    plantGroup.add(flower);
+  }
+
+  // Buah (muncul saat level 10 / sempurna)
+  if (level >= 10) {
+    const fGeo = new THREE.SphereGeometry(0.15, 10, 10);
+    const fMat = new THREE.MeshStandardMaterial({ color: 0xe53935 });
+    const f1 = new THREE.Mesh(fGeo, fMat);
+    f1.position.set(0.26, 0.25 + stemH * 0.72, 0.14);
+    f1.castShadow = true;
+    plantGroup.add(f1);
+    const f2 = new THREE.Mesh(fGeo, fMat);
+    f2.position.set(-0.22, 0.25 + stemH * 0.62, -0.2);
+    f2.castShadow = true;
+    plantGroup.add(f2);
+  }
+}
+
+/* =========================================================
+   INISIALISASI
+========================================================= */
+window.addEventListener('load', () => {
+  if (typeof THREE === 'undefined') {
+    console.warn('Three.js gagal dimuat, animasi WebGL tidak tersedia.');
+  }
+});
+</script>
+</body>
+</html>
