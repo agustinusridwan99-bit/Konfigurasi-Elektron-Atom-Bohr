@@ -3,650 +3,1990 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Atom Builder - Konfigurasi Elektron Bohr</title>
+<title>Konfigurasi Elektron Atom Bohr - Kimia Kelas 10</title>
 <style>
-  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-  html,body { width:100%; height:100%; overflow:hidden; font-family:'Segoe UI',Roboto,sans-serif; background:#05060f; color:#e6f1ff; }
-  #app { position:relative; width:100%; height:100%; display:flex; flex-direction:column; }
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background: #0a0e27;
+  color: #e8eaf6;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+#app { max-width: 480px; margin: 0 auto; min-height: 100vh; position: relative; padding-bottom: 80px; }
 
-  /* ===== WebGL Canvas ===== */
-  #glCanvas { position:absolute; inset:0; z-index:0; }
+.header {
+  background: linear-gradient(135deg, #1a237e 0%, #0d47a1 50%, #00695c 100%);
+  padding: 18px 16px;
+  text-align: center;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  position: sticky; top:0; z-index: 100;
+}
+.header h1 { font-size: 1.05rem; font-weight: 700; letter-spacing: 0.5px; }
+.header p { font-size: 0.7rem; opacity: 0.85; margin-top: 3px; }
+.header.teacher { background: linear-gradient(135deg, #4a148c 0%, #6a1b9a 50%, #ad1457 100%); }
 
-  /* ===== Overlay UI ===== */
-  .ui { position:relative; z-index:10; pointer-events:none; }
-  .ui > * { pointer-events:auto; }
+.nav {
+  position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+  width: 100%; max-width: 480px;
+  background: #12172e;
+  display: flex; border-top: 1px solid #2a3160;
+  z-index: 200;
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.5);
+}
+.nav button {
+  flex: 1; background: none; border: none; color: #6b7399;
+  padding: 10px 2px 12px; font-size: 0.6rem; cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  transition: color 0.2s; font-family: inherit;
+}
+.nav button .ico { font-size: 1.2rem; line-height: 1; }
+.nav button.active { color: #4fc3f7; }
+.nav button.active .ico { filter: drop-shadow(0 0 6px #4fc3f7); }
 
-  /* ===== Header ===== */
-  #header {
-    display:flex; align-items:center; justify-content:space-between;
-    padding:10px 14px; background:rgba(8,14,30,0.75);
-    backdrop-filter:blur(8px); border-bottom:1px solid rgba(0,180,255,0.25);
-    font-size:13px;
-  }
-  #header .user { display:flex; align-items:center; gap:8px; }
-  #header .avatar {
-    width:30px; height:30px; border-radius:50%;
-    background:linear-gradient(135deg,#00d4ff,#7b2ff7);
-    display:flex; align-items:center; justify-content:center;
-    font-weight:bold; font-size:13px;
-  }
-  #header .stats { display:flex; gap:12px; }
-  #header .stats span { color:#00d4ff; font-weight:700; }
-  .btn-logout {
-    background:transparent; border:1px solid rgba(255,80,80,0.5);
-    color:#ff6b6b; border-radius:8px; padding:5px 10px; font-size:11px;
-    cursor:pointer;
-  }
+.page { display: none; padding: 16px; animation: fade 0.3s; }
+.page.active { display: block; }
+@keyframes fade { from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);} }
 
-  /* ===== Main Content ===== */
-  #main { flex:1; display:flex; flex-direction:column; justify-content:space-between; }
+.card {
+  background: #141a36;
+  border: 1px solid #252d54;
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 14px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+}
+.card h2 { font-size: 0.95rem; margin-bottom: 10px; color: #4fc3f7; display: flex; align-items: center; gap: 8px; }
+.card h3 { font-size: 0.85rem; margin-bottom: 8px; color: #b0bec5; }
+.card p, .card li { font-size: 0.82rem; line-height: 1.6; color: #c5cae9; }
+.card ul { padding-left: 18px; margin: 6px 0; }
 
-  /* ===== Atom Info Panel ===== */
-  #atomPanel {
-    margin:10px 14px 0; padding:10px 14px;
-    background:rgba(8,14,30,0.7); backdrop-filter:blur(8px);
-    border:1px solid rgba(0,180,255,0.25); border-radius:14px;
-    font-size:12px;
-  }
-  #atomPanel .row { display:flex; justify-content:space-between; margin-bottom:4px; }
-  #atomPanel .label { color:#8aa8c8; }
-  #atomPanel .value { color:#00e5ff; font-weight:700; }
-  #shells { display:flex; gap:8px; margin-top:6px; flex-wrap:wrap; }
-  .shell-chip {
-    padding:3px 9px; border-radius:20px; font-size:11px; font-weight:700;
-    background:rgba(0,180,255,0.12); border:1px solid rgba(0,180,255,0.4);
-    color:#7fd6ff;
-  }
-  .shell-chip.full { background:rgba(0,255,150,0.15); border-color:#00ffa3; color:#00ffa3; }
+.input-group { margin-bottom: 12px; }
+.input-group label { display: block; font-size: 0.75rem; color: #9fa8da; margin-bottom: 5px; font-weight: 600; }
+.input-group input, .input-group select {
+  width: 100%; padding: 11px 13px; border-radius: 10px;
+  border: 1px solid #2a3160; background: #0d1229; color: #e8eaf6;
+  font-size: 0.85rem; font-family: inherit; outline: none;
+  transition: border-color 0.2s;
+}
+.input-group input:focus, .input-group select:focus { border-color: #4fc3f7; }
 
-  /* ===== Question Card ===== */
-  #quizArea { padding:0 14px; }
-  #questionCard {
-    background:rgba(10,18,38,0.85); backdrop-filter:blur(10px);
-    border:1px solid rgba(0,180,255,0.3); border-radius:16px;
-    padding:14px; margin-bottom:10px;
-    box-shadow:0 8px 30px rgba(0,120,255,0.15);
-  }
-  #qProgress { font-size:11px; color:#8aa8c8; margin-bottom:6px; }
-  #qText { font-size:14px; line-height:1.45; margin-bottom:12px; font-weight:600; }
-  #options { display:flex; flex-direction:column; gap:8px; }
-  .option {
-    background:rgba(0,180,255,0.08); border:1px solid rgba(0,180,255,0.3);
-    color:#d0e8ff; border-radius:10px; padding:11px 13px; font-size:13px;
-    text-align:left; cursor:pointer; transition:all .2s;
-    display:flex; align-items:center; gap:10px;
-  }
-  .option .key {
-    width:22px; height:22px; border-radius:50%; flex-shrink:0;
-    background:rgba(0,180,255,0.2); display:flex; align-items:center;
-    justify-content:center; font-weight:700; font-size:11px;
-  }
-  .option:active { transform:scale(0.98); }
-  .option.correct { background:rgba(0,255,150,0.2); border-color:#00ffa3; color:#00ffa3; }
-  .option.wrong { background:rgba(255,60,60,0.2); border-color:#ff4d4d; color:#ff6b6b; }
-  .option:disabled { opacity:0.6; }
+.btn {
+  width: 100%; padding: 13px; border-radius: 12px; border: none;
+  background: linear-gradient(135deg, #1976d2, #00897b);
+  color: white; font-weight: 700; font-size: 0.88rem;
+  cursor: pointer; font-family: inherit;
+  transition: transform 0.15s, box-shadow 0.15s;
+  box-shadow: 0 4px 14px rgba(25,118,210,0.4);
+}
+.btn:active { transform: scale(0.97); }
+.btn.secondary { background: #2a3160; box-shadow: none; }
+.btn.purple { background: linear-gradient(135deg, #6a1b9a, #ad1457); box-shadow: 0 4px 14px rgba(106,27,154,0.4); }
+.btn.danger { background: linear-gradient(135deg, #c62828, #d32f2f); box-shadow: 0 4px 14px rgba(198,40,40,0.4); }
+.btn.small { padding: 8px 14px; width: auto; font-size: 0.75rem; border-radius: 8px; }
+.btn-row { display: flex; gap: 8px; }
 
-  /* ===== Feedback ===== */
-  #feedback {
-    text-align:center; font-size:13px; font-weight:700; padding:6px;
-    border-radius:10px; margin-top:8px; display:none;
-  }
-  #feedback.ok { display:block; color:#00ffa3; }
-  #feedback.bad { display:block; color:#ff6b6b; }
+#loginScreen {
+  position: fixed; inset: 0; z-index: 1000;
+  background: radial-gradient(circle at 50% 30%, #1a237e 0%, #0a0e27 70%);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 24px; overflow-y: auto;
+}
+#loginScreen.hidden { display: none; }
+.login-box {
+  width: 100%; max-width: 380px;
+  background: rgba(20,26,54,0.95);
+  border: 1px solid #2a3160;
+  border-radius: 20px; padding: 24px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+  margin: auto 0;
+}
+.login-logo { text-align: center; margin-bottom: 20px; }
+.login-logo .atom-emoji { font-size: 3rem; display: block; margin-bottom: 8px; animation: spin 4s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.login-logo h1 { font-size: 1.05rem; color: #4fc3f7; }
+.login-logo p { font-size: 0.72rem; color: #7986cb; margin-top: 4px; }
 
-  /* ===== Bottom Bar ===== */
-  #bottomBar {
-    display:flex; gap:10px; padding:10px 14px 14px;
-    align-items:center;
-  }
-  .btn {
-    flex:1; padding:12px; border-radius:12px; font-size:13px; font-weight:700;
-    border:none; cursor:pointer; transition:all .2s; text-align:center;
-  }
-  .btn-primary {
-    background:linear-gradient(135deg,#00b4ff,#7b2ff7); color:#fff;
-  }
-  .btn-primary:active { transform:scale(0.97); }
-  .btn-primary:disabled { opacity:0.4; }
-  .btn-ghost {
-    background:rgba(0,180,255,0.1); border:1px solid rgba(0,180,255,0.4);
-    color:#7fd6ff; flex:0 0 auto; padding:12px 16px;
-  }
+.login-tabs {
+  display: flex; background: #0d1229; border-radius: 12px; padding: 4px;
+  margin-bottom: 18px; border: 1px solid #2a3160;
+}
+.login-tabs button {
+  flex: 1; padding: 10px; border-radius: 9px; border: none;
+  background: none; color: #7986cb; font-size: 0.78rem; font-weight: 700;
+  cursor: pointer; font-family: inherit; transition: all 0.2s;
+}
+.login-tabs button.active {
+  background: linear-gradient(135deg, #1976d2, #00897b); color: #fff;
+}
+.login-tabs button.active.teacher-tab {
+  background: linear-gradient(135deg, #6a1b9a, #ad1457);
+}
 
-  /* ===== Modals ===== */
-  .modal {
-    position:fixed; inset:0; z-index:100; display:none;
-    align-items:center; justify-content:center;
-    background:rgba(2,4,12,0.85); backdrop-filter:blur(6px); padding:20px;
-  }
-  .modal.active { display:flex; }
-  .modal-box {
-    width:100%; max-width:380px; background:rgba(10,18,38,0.98);
-    border:1px solid rgba(0,180,255,0.35); border-radius:20px;
-    padding:24px; text-align:center;
-    box-shadow:0 20px 60px rgba(0,120,255,0.3);
-    max-height:90vh; overflow-y:auto;
-  }
-  .modal-box h2 { font-size:19px; margin-bottom:6px; color:#00e5ff; }
-  .modal-box p { font-size:12px; color:#8aa8c8; margin-bottom:16px; line-height:1.5; }
-  .modal-box input {
-    width:100%; padding:12px; border-radius:10px; margin-bottom:10px;
-    background:rgba(0,180,255,0.08); border:1px solid rgba(0,180,255,0.35);
-    color:#e6f1ff; font-size:14px; outline:none;
-  }
-  .modal-box input:focus { border-color:#00b4ff; }
-  .modal-box .btn { width:100%; margin-top:4px; }
-  .link { color:#00b4ff; font-size:12px; cursor:pointer; margin-top:12px; display:inline-block; }
+#canvas3d {
+  width: 100%; height: 340px; border-radius: 14px;
+  background: #05081a; display: block; touch-action: none;
+}
+.viewer-wrap { position: relative; }
+.viewer-info {
+  position: absolute; top: 10px; left: 10px;
+  background: rgba(10,14,39,0.85); padding: 6px 10px;
+  border-radius: 8px; font-size: 0.7rem; border: 1px solid #2a3160;
+  backdrop-filter: blur(6px);
+}
+.viewer-info b { color: #4fc3f7; }
+.viewer-controls {
+  position: absolute; bottom: 10px; right: 10px; display: flex; gap: 6px;
+}
+.viewer-controls button {
+  background: rgba(10,14,39,0.85); border: 1px solid #2a3160; color: #4fc3f7;
+  width: 34px; height: 34px; border-radius: 8px; font-size: 0.9rem;
+  cursor: pointer; backdrop-filter: blur(6px);
+}
 
-  /* ===== Leaderboard ===== */
-  .lb-item {
-    display:flex; align-items:center; gap:10px; padding:9px 10px;
-    border-radius:10px; margin-bottom:6px; font-size:13px;
-    background:rgba(0,180,255,0.06); border:1px solid rgba(0,180,255,0.15);
-  }
-  .lb-item.me { background:rgba(0,255,150,0.12); border-color:#00ffa3; }
-  .lb-rank {
-    width:26px; height:26px; border-radius:50%; flex-shrink:0;
-    display:flex; align-items:center; justify-content:center;
-    font-weight:700; font-size:12px; background:rgba(0,180,255,0.2);
-  }
-  .lb-rank.gold { background:linear-gradient(135deg,#ffd700,#ff8c00); color:#1a1a1a; }
-  .lb-rank.silver { background:linear-gradient(135deg,#e0e0e0,#9e9e9e); color:#1a1a1a; }
-  .lb-rank.bronze { background:linear-gradient(135deg,#cd7f32,#8b4513); color:#fff; }
-  .lb-name { flex:1; text-align:left; }
-  .lb-points { color:#00e5ff; font-weight:700; }
+.shell-display { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+.shell-row {
+  display: flex; align-items: center; gap: 8px;
+  background: #0d1229; border-radius: 10px; padding: 8px 12px;
+  border-left: 3px solid #4fc3f7;
+}
+.shell-row .shell-name { font-weight: 700; color: #4fc3f7; font-size: 0.8rem; min-width: 28px; }
+.shell-row .shell-electrons { font-family: monospace; font-size: 0.8rem; color: #e8eaf6; letter-spacing: 1px; }
+.shell-row .shell-count { font-size: 0.7rem; color: #7986cb; margin-left: auto; }
 
-  /* ===== Badge Notification ===== */
-  #badgeToast {
-    position:fixed; top:60px; left:50%; transform:translateX(-50%) translateY(-120%);
-    z-index:200; background:linear-gradient(135deg,#ffd700,#ff8c00);
-    color:#1a1a1a; padding:12px 20px; border-radius:14px;
-    font-weight:700; font-size:13px; display:flex; align-items:center; gap:10px;
-    box-shadow:0 10px 40px rgba(255,180,0,0.5);
-    transition:transform .5s cubic-bezier(.2,1.4,.5,1);
-    max-width:90vw;
-  }
-  #badgeToast.show { transform:translateX(-50%) translateY(0); }
-  #badgeToast .ico { font-size:22px; }
+.config-text {
+  font-family: 'Courier New', monospace; font-size: 0.95rem;
+  background: #0d1229; padding: 12px; border-radius: 10px;
+  text-align: center; color: #4fc3f7; letter-spacing: 1px;
+  border: 1px dashed #2a3160; word-break: break-all;
+}
 
-  /* ===== Loading ===== */
-  #loading {
-    position:fixed; inset:0; z-index:300; background:#05060f;
-    display:flex; flex-direction:column; align-items:center; justify-content:center;
-    transition:opacity .5s;
-  }
-  #loading.hide { opacity:0; pointer-events:none; }
-  .atom-spin {
-    width:60px; height:60px; border-radius:50%;
-    border:3px solid rgba(0,180,255,0.2);
-    border-top-color:#00b4ff; animation:spin 1s linear infinite;
-    margin-bottom:16px;
-  }
-  @keyframes spin { to { transform:rotate(360deg); } }
-  #loading p { font-size:13px; color:#8aa8c8; }
+.quiz-q { font-size: 0.9rem; font-weight: 600; margin-bottom: 14px; color: #e8eaf6; line-height: 1.5; }
+.quiz-opt {
+  display: block; width: 100%; text-align: left;
+  background: #0d1229; border: 1px solid #2a3160; color: #c5cae9;
+  padding: 12px 14px; border-radius: 10px; margin-bottom: 8px;
+  font-size: 0.82rem; cursor: pointer; font-family: inherit;
+  transition: all 0.2s;
+}
+.quiz-opt:active { transform: scale(0.98); }
+.quiz-opt.correct { background: #1b5e20; border-color: #4caf50; color: #fff; }
+.quiz-opt.wrong { background: #b71c1c; border-color: #ef5350; color: #fff; }
+.quiz-opt.disabled { pointer-events: none; opacity: 0.7; }
+.quiz-opt.disabled.correct, .quiz-opt.disabled.wrong { opacity: 1; }
 
-  /* ===== Status Banner (unstable) ===== */
-  #statusBanner {
-    position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
-    z-index:50; pointer-events:none; text-align:center;
-    font-size:20px; font-weight:800; color:#ff4d4d;
-    text-shadow:0 0 20px rgba(255,60,60,0.8);
-    opacity:0; transition:opacity .3s;
-  }
-  #statusBanner.show { opacity:1; }
+.progress-bar {
+  height: 6px; background: #0d1229; border-radius: 3px; overflow: hidden; margin-bottom: 14px;
+}
+.progress-bar > div { height: 100%; background: linear-gradient(90deg, #4fc3f7, #00897b); transition: width 0.3s; }
 
-  /* Responsive tweaks */
-  @media (max-height:680px) {
-    #atomPanel { padding:7px 12px; font-size:11px; }
-    #qText { font-size:13px; }
-    .option { padding:9px 11px; font-size:12px; }
-    .btn { padding:10px; font-size:12px; }
-  }
+.feedback {
+  padding: 12px; border-radius: 10px; margin-top: 10px; font-size: 0.8rem;
+  line-height: 1.5; display: none;
+}
+.feedback.show { display: block; animation: fade 0.3s; }
+.feedback.ok { background: rgba(76,175,80,0.15); border: 1px solid #4caf50; color: #a5d6a7; }
+.feedback.no { background: rgba(244,67,54,0.15); border: 1px solid #ef5350; color: #ef9a9a; }
+
+.locked-box {
+  text-align: center; padding: 20px 14px;
+  background: linear-gradient(135deg, rgba(106,27,154,0.15), rgba(173,20,87,0.15));
+  border: 1px solid #6a1b9a; border-radius: 14px;
+}
+.locked-box .lock-ico { font-size: 2.5rem; display: block; margin-bottom: 10px; }
+.locked-box h3 { color: #ce93d8; font-size: 0.95rem; margin-bottom: 8px; }
+.locked-box p { font-size: 0.78rem; color: #c5cae9; line-height: 1.5; }
+
+.result-circle {
+  width: 130px; height: 130px; border-radius: 50%; margin: 0 auto 16px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  background: conic-gradient(#4fc3f7 var(--p), #1a2145 0);
+  position: relative;
+}
+.result-circle::before {
+  content: ''; position: absolute; inset: 8px; border-radius: 50%; background: #141a36;
+}
+.result-circle .val { position: relative; font-size: 2rem; font-weight: 800; color: #4fc3f7; }
+.result-circle .lbl { position: relative; font-size: 0.65rem; color: #7986cb; }
+
+.stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+.stat-box { background: #0d1229; border-radius: 10px; padding: 12px; text-align: center; border: 1px solid #2a3160; }
+.stat-box .v { font-size: 1.3rem; font-weight: 800; color: #4fc3f7; }
+.stat-box .l { font-size: 0.65rem; color: #7986cb; margin-top: 2px; }
+
+.lb-item {
+  display: flex; align-items: center; gap: 10px;
+  background: #0d1229; border-radius: 10px; padding: 10px 12px;
+  margin-bottom: 8px; border: 1px solid #252d54;
+}
+.lb-item.me { border-color: #4fc3f7; background: rgba(79,195,247,0.08); }
+.lb-rank { font-weight: 800; font-size: 0.9rem; min-width: 28px; text-align: center; color: #7986cb; }
+.lb-rank.top1 { color: #ffd54f; }
+.lb-rank.top2 { color: #cfd8dc; }
+.lb-rank.top3 { color: #ff8a65; }
+.lb-avatar {
+  width: 34px; height: 34px; border-radius: 50%;
+  background: linear-gradient(135deg, #1976d2, #00897b);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 0.8rem; color: #fff; flex-shrink: 0;
+}
+.lb-info { flex: 1; min-width: 0; }
+.lb-name { font-size: 0.8rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lb-sub { font-size: 0.65rem; color: #7986cb; }
+.lb-score { font-weight: 800; color: #4fc3f7; font-size: 0.9rem; }
+
+.profile-head { text-align: center; padding: 10px 0 16px; }
+.profile-avatar {
+  width: 76px; height: 76px; border-radius: 50%; margin: 0 auto 10px;
+  background: linear-gradient(135deg, #1976d2, #00897b);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.8rem; font-weight: 800; color: #fff;
+  box-shadow: 0 4px 20px rgba(25,118,210,0.5);
+}
+.profile-avatar.teacher { background: linear-gradient(135deg, #6a1b9a, #ad1457); box-shadow: 0 4px 20px rgba(106,27,154,0.5); }
+.profile-name { font-size: 1.05rem; font-weight: 700; }
+.profile-sub { font-size: 0.72rem; color: #7986cb; margin-top: 2px; }
+
+.badge-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.badge-item {
+  background: #0d1229; border-radius: 12px; padding: 12px 6px;
+  text-align: center; border: 1px solid #252d54; opacity: 0.4;
+  transition: all 0.3s;
+}
+.badge-item.unlocked { opacity: 1; border-color: #4fc3f7; box-shadow: 0 0 14px rgba(79,195,247,0.2); }
+.badge-item .b-ico { font-size: 1.6rem; display: block; margin-bottom: 4px; }
+.badge-item .b-name { font-size: 0.6rem; color: #c5cae9; line-height: 1.3; }
+
+#toast {
+  position: fixed; top: 80px; left: 50%; transform: translateX(-50%) translateY(-20px);
+  background: #1a237e; color: #fff; padding: 12px 20px; border-radius: 12px;
+  font-size: 0.8rem; z-index: 2000; opacity: 0; pointer-events: none;
+  transition: all 0.3s; box-shadow: 0 6px 24px rgba(0,0,0,0.5);
+  border: 1px solid #4fc3f7; max-width: 90%; text-align: center;
+}
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+#toast.error { border-color: #ef5350; background: #b71c1c; }
+#toast.success { border-color: #4caf50; background: #1b5e20; }
+
+table.info-table { width: 100%; border-collapse: collapse; font-size: 0.75rem; margin-top: 8px; }
+table.info-table th, table.info-table td { padding: 8px 6px; text-align: center; border-bottom: 1px solid #252d54; }
+table.info-table th { color: #4fc3f7; font-weight: 700; }
+table.info-table td { color: #c5cae9; }
+
+.elem-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 10px;
+}
+.elem-btn {
+  background: #0d1229; border: 1px solid #2a3160; color: #c5cae9;
+  padding: 9px 4px; border-radius: 10px; font-size: 0.72rem; cursor: pointer;
+  font-family: inherit; font-weight: 600; transition: all 0.2s;
+}
+.elem-btn.active { background: linear-gradient(135deg, #1976d2, #00897b); color: #fff; border-color: #4fc3f7; }
+.elem-btn:active { transform: scale(0.95); }
+
+.hint { font-size: 0.7rem; color: #7986cb; font-style: italic; margin-top: 6px; }
+
+.rule-box {
+  background: #0d1229; border-radius: 12px; padding: 12px 14px; margin: 8px 0;
+  border-left: 3px solid #4fc3f7;
+}
+.rule-box h4 { font-size: 0.8rem; color: #4fc3f7; margin-bottom: 6px; }
+.rule-box p, .rule-box li { font-size: 0.78rem; line-height: 1.5; color: #c5cae9; }
+.rule-box ul { padding-left: 16px; }
+.example-chip {
+  display: inline-block; background: #1a2145; color: #4fc3f7;
+  font-family: 'Courier New', monospace; font-size: 0.75rem;
+  padding: 4px 8px; border-radius: 6px; margin: 3px 4px 3px 0;
+  border: 1px solid #2a3160;
+}
+.lesson-num {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px; border-radius: 50%;
+  background: linear-gradient(135deg, #1976d2, #00897b);
+  font-size: 0.7rem; font-weight: 800; color: #fff; margin-right: 6px;
+}
+.practice-item {
+  background: #0d1229; border-radius: 10px; padding: 10px 12px;
+  margin-bottom: 8px; border: 1px solid #252d54;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.practice-item .pq { font-size: 0.78rem; color: #c5cae9; }
+.practice-item .pq b { color: #4fc3f7; }
+.practice-item .pa { font-family: 'Courier New', monospace; font-size: 0.8rem; color: #4fc3f7; font-weight: 700; }
+.practice-item button {
+  background: #2a3160; border: none; color: #4fc3f7;
+  width: 28px; height: 28px; border-radius: 8px; cursor: pointer;
+  font-size: 0.85rem; font-family: inherit;
+}
+
+/* ===== TOMBOL LOGOUT ===== */
+.logout-link { text-align: center; margin-top: 16px; margin-bottom: 10px; }
+.logout-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 28px;
+  border-radius: 12px;
+  border: 1px solid #ef5350;
+  background: rgba(198,40,40,0.12);
+  color: #ef5350;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+.logout-btn:hover, .logout-btn:active {
+  background: rgba(198,40,40,0.25);
+  transform: scale(0.97);
+}
+.logout-btn .ico { font-size: 1.1rem; }
+.logout-btn.teacher {
+  border-color: #ce93d8;
+  background: rgba(106,27,154,0.15);
+  color: #ce93d8;
+}
+.logout-btn.teacher:hover, .logout-btn.teacher:active {
+  background: rgba(106,27,154,0.3);
+}
+
+/* ===== TEACHER DASHBOARD ===== */
+.student-card {
+  background: #0d1229; border-radius: 12px; padding: 12px;
+  margin-bottom: 10px; border: 1px solid #252d54;
+  transition: all 0.3s;
+}
+.student-card.done { border-left: 3px solid #4caf50; }
+.student-card.notdone { border-left: 3px solid #ff9800; }
+.student-card.removing {
+  opacity: 0.3; transform: translateX(-30px) scale(0.9);
+  background: rgba(198,40,40,0.2);
+}
+.student-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.student-avatar {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: linear-gradient(135deg, #1976d2, #00897b);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 0.85rem; color: #fff; flex-shrink: 0;
+}
+.student-info { flex: 1; min-width: 0; }
+.student-name { font-size: 0.85rem; font-weight: 700; }
+.student-meta { font-size: 0.68rem; color: #7986cb; }
+.student-stats { display: flex; gap: 8px; margin-top: 6px; }
+.student-stat {
+  flex: 1; background: #141a36; border-radius: 8px; padding: 6px;
+  text-align: center; font-size: 0.65rem; color: #7986cb;
+}
+.student-stat b { display: block; font-size: 0.95rem; color: #4fc3f7; margin-bottom: 2px; }
+
+.student-actions {
+  display: flex; gap: 6px; margin-top: 8px;
+  padding-top: 8px; border-top: 1px dashed #252d54;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+.btn-action {
+  background: #2a3160; border: none; color: #4fc3f7;
+  font-size: 0.7rem; padding: 6px 12px; border-radius: 8px;
+  cursor: pointer; font-family: inherit; font-weight: 700;
+  display: flex; align-items: center; gap: 4px;
+  transition: transform 0.15s;
+}
+.btn-action:active { transform: scale(0.94); }
+.btn-action.delete {
+  background: linear-gradient(135deg, #c62828, #d32f2f); color: #fff;
+  box-shadow: 0 2px 8px rgba(198,40,40,0.3);
+}
+.btn-action.reset {
+  background: linear-gradient(135deg, #f57c00, #ef6c00); color: #fff;
+  box-shadow: 0 2px 8px rgba(245,124,0,0.3);
+}
+
+/* Modal konfirmasi */
+.modal-backdrop {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.75);
+  z-index: 3000; display: none; align-items: center; justify-content: center;
+  padding: 20px; backdrop-filter: blur(4px);
+}
+.modal-backdrop.show { display: flex; animation: fade 0.2s; }
+.modal-box {
+  background: #141a36; border: 1px solid #2a3160;
+  border-radius: 18px; padding: 22px; max-width: 360px; width: 100%;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.7);
+  animation: popIn 0.25s;
+}
+@keyframes popIn { from{transform:scale(0.9); opacity:0;} to{transform:scale(1); opacity:1;} }
+.modal-box h3 { font-size: 1rem; color: #ef5350; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+.modal-box p { font-size: 0.82rem; color: #c5cae9; line-height: 1.6; margin-bottom: 16px; }
+.modal-box .student-target {
+  background: #0d1229; border-radius: 10px; padding: 10px 12px;
+  margin-bottom: 14px; border-left: 3px solid #ef5350;
+}
+.modal-box .student-target .n { font-weight: 700; font-size: 0.88rem; }
+.modal-box .student-target .m { font-size: 0.7rem; color: #7986cb; margin-top: 2px; }
+.modal-actions { display: flex; gap: 8px; }
+.modal-actions button { flex: 1; padding: 12px; border-radius: 10px; border: none; font-weight: 700; font-size: 0.82rem; cursor: pointer; font-family: inherit; }
+.modal-cancel { background: #2a3160; color: #c5cae9; }
+.modal-confirm { background: linear-gradient(135deg, #c62828, #d32f2f); color: #fff; }
+.modal-confirm.warn { background: linear-gradient(135deg, #f57c00, #ef6c00); }
+
+#logoutModal .modal-box h3 { color: #4fc3f7; }
+#logoutModal .modal-confirm { background: linear-gradient(135deg, #1976d2, #00897b); }
+
+/* Modal form (khusus ubah kode guru) */
+.modal-form-input {
+  width: 100%; padding: 12px 14px; border-radius: 10px;
+  border: 1px solid #2a3160; background: #0d1229; color: #e8eaf6;
+  font-size: 0.9rem; font-family: inherit; outline: none;
+  margin-bottom: 10px; transition: border-color 0.2s;
+}
+.modal-form-input:focus { border-color: #ce93d8; }
+.modal-form-input.upper { text-transform: uppercase; }
+.modal-form-label { font-size: 0.72rem; color: #9fa8da; font-weight: 600; margin-bottom: 5px; display: block; }
+
+.filter-row {
+  display: flex; gap: 6px; margin-bottom: 12px; overflow-x: auto;
+  padding-bottom: 4px;
+}
+.filter-btn {
+  padding: 7px 14px; border-radius: 20px; border: 1px solid #2a3160;
+  background: #0d1229; color: #7986cb; font-size: 0.72rem; font-weight: 700;
+  cursor: pointer; white-space: nowrap; font-family: inherit;
+  transition: all 0.2s;
+}
+.filter-btn.active {
+  background: linear-gradient(135deg, #6a1b9a, #ad1457); color: #fff;
+  border-color: #ce93d8;
+}
+
+.summary-box {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+  margin-bottom: 14px;
+}
+.summary-item {
+  background: #0d1229; border-radius: 10px; padding: 10px 6px;
+  text-align: center; border: 1px solid #2a3160;
+}
+.summary-item .v { font-size: 1.2rem; font-weight: 800; color: #4fc3f7; }
+.summary-item .l { font-size: 0.6rem; color: #7986cb; margin-top: 2px; }
+
+.empty-state {
+  text-align: center; padding: 30px 14px; color: #7986cb;
+}
+.empty-state .ico { font-size: 2.5rem; display: block; margin-bottom: 10px; opacity: 0.5; }
+
+.danger-zone {
+  border: 1px solid #c62828; background: rgba(198,40,40,0.08);
+  border-radius: 14px; padding: 14px; margin-top: 12px;
+}
+.danger-zone h3 { color: #ef5350; font-size: 0.85rem; margin-bottom: 6px; }
+.danger-zone p { font-size: 0.72rem; color: #c5cae9; line-height: 1.5; margin-bottom: 10px; }
+
+/* Kode guru display */
+.code-display {
+  display: inline-block;
+  font-family: 'Courier New', monospace;
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #ce93d8;
+  background: #0d1229;
+  padding: 6px 14px;
+  border-radius: 10px;
+  border: 1px dashed #6a1b9a;
+  letter-spacing: 3px;
+}
+
+@media (max-width: 360px) {
+  .header h1 { font-size: 0.92rem; }
+  .nav button { font-size: 0.55rem; }
+  .nav button .ico { font-size: 1.05rem; }
+  .elem-grid { grid-template-columns: repeat(4, 1fr); gap: 6px; }
+}
 </style>
 </head>
 <body>
+
+<!-- =========================================================
+     LOGIN SCREEN
+========================================================= -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">
+      <span class="atom-emoji">⚛️</span>
+      <h1>Konfigurasi Elektron Atom Bohr</h1>
+      <p>Kimia Kelas 10 • SMA</p>
+    </div>
+
+    <div class="login-tabs">
+      <button id="tabSiswa" class="active" onclick="switchLoginTab('siswa')">🎓 Siswa</button>
+      <button id="tabGuru" onclick="switchLoginTab('guru')">👨‍🏫 Guru</button>
+    </div>
+
+    <!-- FORM SISWA -->
+    <div id="formSiswa">
+      <div class="input-group">
+        <label>Nama Lengkap</label>
+        <input type="text" id="inpName" placeholder="Contoh: Budi Santoso" maxlength="30">
+      </div>
+      <div class="input-group">
+        <label>Kelas</label>
+        <select id="inpClass">
+          <option value="">-- Pilih Kelas --</option>
+          <option>XA</option><option>XB</option><option>XC</option><option>XD</option>
+          <option>XE</option><option>XF</option><option>XG</option><option>XH</option>
+        </select>
+      </div>
+      <div class="input-group">
+        <label>Nomor Absen (1-40)</label>
+        <input type="number" id="inpAbsen" placeholder="Contoh: 15" min="1" max="40">
+      </div>
+      <button class="btn" onclick="doLoginSiswa()">Masuk sebagai Siswa</button>
+      <p class="hint" style="text-align:center; margin-top:10px;">
+        Setiap siswa hanya dapat mengerjakan kuis <b>satu kali</b>.
+      </p>
+    </div>
+
+    <!-- FORM GURU -->
+    <div id="formGuru" style="display:none;">
+      <div class="input-group">
+        <label>Nama Guru</label>
+        <input type="text" id="inpTeacherName" placeholder="Contoh: Suramli" maxlength="30">
+      </div>
+      <div class="input-group">
+        <label>Kode Inisial Guru</label>
+        <input type="text" id="inpTeacherCode" placeholder="Contoh: SR" maxlength="6" style="text-transform:uppercase;">
+      </div>
+      <button class="btn purple" onclick="doLoginGuru()">Masuk sebagai Guru</button>
+      <p class="hint" style="text-align:center; margin-top:10px;">
+        <b>Login pertama:</b> nama + kode akan otomatis dibuat.<br>
+        <b>Login berikutnya:</b> gunakan nama & kode yang <b>sama</b>.
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- =========================================================
+     APP
+========================================================= -->
 <div id="app">
-  <canvas id="glCanvas"></canvas>
+  <div class="header" id="appHeader">
+    <h1 id="headerTitle">⚛️ Konfigurasi Elektron Atom Bohr</h1>
+    <p id="headerSub">Kimia Kelas 10 • Kulit K, L, M, N</p>
+  </div>
 
-  <!-- Loading -->
-  <div id="loading"><div class="atom-spin"></div><p>Memuat dunia atom...</p></div>
+  <!-- ================= PAGE: MATERI ================= -->
+  <div class="page active" id="page-materi">
+    <div class="card">
+      <h2>📘 Model Atom Bohr: Kulit Elektron</h2>
+      <p>Menurut <b>Teori Atom Bohr</b>, elektron berada dalam suatu lintasan (orbit) tertentu yang disebut <b>kulit elektron</b>, diberi lambang <b>K, L, M, N</b>, dan seterusnya dihitung dari inti atom.</p>
+      <p style="margin-top:8px;">Rumus jumlah elektron maksimum per kulit:</p>
+      <div class="config-text">Σ maksimum = 2n²</div>
+      <table class="info-table">
+        <tr><th>Nomor Kulit (n)</th><th>Lambang</th><th>Elektron Maksimum (2n²)</th></tr>
+        <tr><td>1</td><td>K</td><td>2</td></tr>
+        <tr><td>2</td><td>L</td><td>8</td></tr>
+        <tr><td>3</td><td>M</td><td>18</td></tr>
+        <tr><td>4</td><td>N</td><td>32</td></tr>
+      </table>
+      <p class="hint" style="margin-top:8px;">Contoh: kulit ke-3 (M) → 2×3² = 18 elektron.</p>
+    </div>
 
-  <!-- Status Banner -->
-  <div id="statusBanner">⚠️ ATOM TIDAK STABIL!</div>
+    <div class="card">
+      <h2>🔵 Aturan Pengisian Kulit K dan L</h2>
+      <div class="rule-box">
+        <h4>Aturan Kulit K</h4>
+        <ul>
+          <li>Diisi <b>2 elektron</b>, jika elektron tersedia ≥ 2.</li>
+          <li>Diisi <b>1 elektron</b>, hanya untuk atom Hidrogen (H).</li>
+        </ul>
+      </div>
+      <div class="rule-box">
+        <h4>Aturan Kulit L</h4>
+        <ul>
+          <li>Diisi <b>8 elektron</b>, jika elektron tersedia ≥ 8.</li>
+          <li>Diisi <b>sisa elektron</b>, jika elektron tersedia < 8.</li>
+        </ul>
+      </div>
+      <p style="margin-top:6px;"><b>Contoh:</b></p>
+      <span class="example-chip">₃Li : 2, 1 → K=2, L=1</span>
+      <span class="example-chip">₁₂Mg : 2, 8, 2 → K=2, L=8, M=2</span>
+    </div>
 
-  <!-- Header -->
-  <div id="header" class="ui" style="display:none;">
-    <div class="user">
-      <div class="avatar" id="avatarInitial">?</div>
-      <div>
-        <div id="userName" style="font-weight:700;">Siswa</div>
-        <div style="font-size:10px;color:#8aa8c8;"><span id="userPoints">0</span> poin · <span id="userBadges">0</span> badge</div>
+    <div class="card">
+      <h2>🟠 Aturan Pengisian Kulit M dan N</h2>
+      <div class="rule-box">
+        <h4>Aturan Kulit M</h4>
+        <ul>
+          <li><b>18 elektron</b>, jika elektron tersedia > 18.</li>
+          <li><b>8 elektron</b>, jika 8 ≤ elektron tersedia < 18.</li>
+          <li><b>Sisa elektron</b>, jika elektron tersedia < 8.</li>
+        </ul>
+      </div>
+      <div class="rule-box">
+        <h4>Aturan Kulit N</h4>
+        <ul>
+          <li><b>32 elektron</b>, jika elektron tersedia > 32.</li>
+          <li><b>18 elektron</b>, jika 18 ≤ elektron tersedia < 32.</li>
+          <li><b>8 elektron</b>, jika 8 ≤ elektron tersedia < 18; sisanya jika < 8.</li>
+        </ul>
+      </div>
+      <p style="margin-top:6px;"><b>Contoh:</b></p>
+      <span class="example-chip">₁₇Cl : 2, 8, 7</span>
+      <span class="example-chip">₂₀Ca : 2, 8, 8, 2</span>
+      <span class="example-chip">₃₆Kr : 2, 8, 18, 8</span>
+      <span class="example-chip">₃₈Sr : 2, 8, 18, 8, 2</span>
+      <span class="example-chip">₄₉In : 2, 8, 18, 18, 8, 3</span>
+      <span class="example-chip">₈₁Tl : 2, 8, 18, 32, 18, 3</span>
+    </div>
+
+    <div class="card">
+      <h2>✅ Empat Hal yang Wajib Diingat</h2>
+      <p><span class="lesson-num">1</span> Kulit elektron K, L, M, N… dihitung dari inti atom keluar; kapasitas maksimumnya <b>2n²</b>.</p>
+      <p style="margin-top:8px;"><span class="lesson-num">2</span> Kulit <b>K</b> maksimal <b>2 elektron</b> (istimewa: H hanya 1); Kulit <b>L</b> maksimal <b>8 elektron</b>.</p>
+      <p style="margin-top:8px;"><span class="lesson-num">3</span> Kulit <b>M</b> maksimal <b>18</b>, dan kulit <b>N</b> maksimal <b>32</b>, namun tetap mengikuti aturan sisa elektron terluar.</p>
+      <p style="margin-top:8px;"><span class="lesson-num">4</span> Selamat berlatih! Semoga sukses memahami konfigurasi elektron atom Bohr. 🎉</p>
+    </div>
+
+    <div class="card">
+      <h2>✏️ Yuk, Coba Sendiri Dulu!</h2>
+      <p>Tuliskan konfigurasi elektron (kulit K, L, M, ...) dari 6 unsur berikut berdasarkan Teori Atom Bohr.</p>
+      <div id="practiceSet1"></div>
+    </div>
+
+    <div class="card">
+      <h2>📝 Coba Latihan Ya...</h2>
+      <p>Tuliskan konfigurasi elektron berdasarkan Teori Atom Bohr dari unsur berikut.</p>
+      <div id="practiceSet2"></div>
+    </div>
+  </div>
+
+  <!-- ================= PAGE: 3D VIEWER ================= -->
+  <div class="page" id="page-viewer">
+    <div class="card" style="padding:10px;">
+      <div class="viewer-wrap">
+        <canvas id="canvas3d"></canvas>
+        <div class="viewer-info">
+          <div><b id="vElement">Na</b> — Z = <span id="vZ">11</span></div>
+          <div id="vConfig" style="font-family:monospace; font-size:0.65rem; margin-top:2px;">K2 L8 M1</div>
+        </div>
+        <div class="viewer-controls">
+          <button onclick="toggleRotate()" id="btnRotate" title="Pause/Play">⏸</button>
+          <button onclick="resetView()" title="Reset">⟲</button>
+        </div>
       </div>
     </div>
-    <div style="display:flex;gap:8px;">
-      <button class="btn-logout" id="btnLeaderboard">🏆</button>
-      <button class="btn-logout" id="btnLogout">Keluar</button>
+
+    <div class="card">
+      <h2>🧪 Pilih Unsur</h2>
+      <div class="elem-grid" id="elemGrid"></div>
+      <p class="hint">Ketuk unsur untuk melihat konfigurasi elektronnya dalam 3D (Model Atom Bohr).</p>
+    </div>
+
+    <div class="card">
+      <h2>📊 Distribusi Elektron</h2>
+      <div class="shell-display" id="shellDisplay"></div>
+      <div style="margin-top:12px;">
+        <div style="font-size:0.72rem; color:#7986cb; margin-bottom:4px;">Konfigurasi Bohr:</div>
+        <div class="config-text" id="configBohr">-</div>
+      </div>
     </div>
   </div>
 
-  <!-- Main -->
-  <div id="main" class="ui" style="display:none;">
-    <!-- Atom Panel -->
-    <div id="atomPanel">
-      <div class="row"><span class="label">Target Atom</span><span class="value" id="targetAtom">Na</span></div>
-      <div class="row"><span class="label">Elektron Terpasang</span><span class="value"><span id="electronCount">0</span> / <span id="electronTarget">11</span></span></div>
-      <div id="shells"></div>
-    </div>
-
-    <!-- Quiz -->
-    <div id="quizArea">
-      <div id="questionCard">
-        <div id="qProgress">Soal 1 dari 10</div>
-        <div id="qText">Memuat soal...</div>
-        <div id="options"></div>
-        <div id="feedback"></div>
+  <!-- ================= PAGE: KUIS ================= -->
+  <div class="page" id="page-kuis">
+    <div id="quizIntro">
+      <div class="card" style="text-align:center;">
+        <h2 style="justify-content:center;">🎯 Kuis Konfigurasi Bohr</h2>
+        <p>10 soal pilihan ganda tentang konfigurasi elektron atom Bohr.</p>
+        <div class="stat-grid" style="margin:14px 0;">
+          <div class="stat-box"><div class="v">10</div><div class="l">Soal</div></div>
+          <div class="stat-box"><div class="v">10</div><div class="l">Poin/Soal</div></div>
+        </div>
+        <div id="quizStartBtnArea">
+          <button class="btn" onclick="startQuiz()">Mulai Kuis</button>
+        </div>
+        <div id="quizLockedArea" style="display:none;">
+          <div class="locked-box">
+            <span class="lock-ico">🔒</span>
+            <h3>Kuis Sudah Dikerjakan</h3>
+            <p>Kamu hanya diperbolehkan mengerjakan kuis <b>satu kali</b>.<br>Skor terbaikmu sudah tersimpan di peringkat.</p>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>📜 Aturan Penilaian</h3>
+        <ul>
+          <li>Setiap jawaban benar = <b>10 poin</b></li>
+          <li>Badge diberikan berdasarkan skor</li>
+          <li><b>Hanya 1 kali percobaan</b> — tidak dapat diulang</li>
+        </ul>
       </div>
     </div>
 
-    <!-- Bottom -->
-    <div id="bottomBar">
-      <button class="btn btn-ghost" id="btnRestart" title="Ulangi atom">↺</button>
-      <button class="btn btn-primary" id="btnNext" disabled>Lanjut</button>
+    <div id="quizPlay" style="display:none;">
+      <div class="card">
+        <div class="progress-bar"><div id="quizProgress" style="width:0%"></div></div>
+        <div style="display:flex; justify-content:space-between; font-size:0.7rem; color:#7986cb; margin-bottom:10px;">
+          <span>Soal <b id="qNum">1</b>/10</span>
+          <span>Poin: <b id="qScore" style="color:#4fc3f7;">0</b></span>
+        </div>
+        <div class="quiz-q" id="qText">-</div>
+        <div id="qOptions"></div>
+        <div class="feedback" id="qFeedback"></div>
+        <button class="btn" id="qNext" style="display:none; margin-top:12px;" onclick="nextQuestion()">Soal Berikutnya →</button>
+      </div>
+    </div>
+
+    <div id="quizResult" style="display:none;"></div>
+  </div>
+
+  <!-- ================= PAGE: PERINGKAT ================= -->
+  <div class="page" id="page-rank">
+    <div class="card">
+      <h2>🏆 Peringkat Kelas</h2>
+      <p class="hint" style="margin-bottom:10px;">Skor siswa (satu percobaan per siswa)</p>
+      <div id="leaderboard"></div>
+    </div>
+  </div>
+
+  <!-- ================= PAGE: PROFIL ================= -->
+  <div class="page" id="page-profil">
+    <div class="card">
+      <div class="profile-head">
+        <div class="profile-avatar" id="pAvatar">?</div>
+        <div class="profile-name" id="pName">-</div>
+        <div class="profile-sub" id="pSub">-</div>
+      </div>
+      <div class="stat-grid">
+        <div class="stat-box"><div class="v" id="pBest">0</div><div class="l">Skor</div></div>
+        <div class="stat-box"><div class="v" id="pTotal">0</div><div class="l">Percobaan</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>🎖️ Badge</h2>
+      <div class="badge-grid" id="badgeGrid"></div>
+    </div>
+    <div class="logout-link">
+      <button class="logout-btn" onclick="doLogout()">
+        <span class="ico">🚪</span> Keluar Akun
+      </button>
+    </div>
+  </div>
+
+  <!-- ================= PAGE: DASHBOARD GURU ================= -->
+  <div class="page" id="page-dashboard">
+    <div class="card">
+      <h2>👨‍🏫 Dashboard Guru</h2>
+      <p>Pantau dan kelola hasil kuis siswa secara real-time.</p>
+      <div class="summary-box" style="margin-top:12px;">
+        <div class="summary-item"><div class="v" id="sumTotal">0</div><div class="l">Total Siswa</div></div>
+        <div class="summary-item"><div class="v" id="sumDone">0</div><div class="l">Sudah Kuis</div></div>
+        <div class="summary-item"><div class="v" id="sumAvg">0</div><div class="l">Rata-rata</div></div>
+      </div>
+      <div class="filter-row" id="classFilter"></div>
+    </div>
+
+    <div class="card">
+      <h3>📋 Daftar Siswa</h3>
+      <div id="studentList"></div>
+    </div>
+
+    <div class="card">
+      <h2>👤 Akun Guru</h2>
+      <div style="margin-top:10px;">
+        <div style="font-size:0.75rem; color:#7986cb;">Nama Guru:</div>
+        <div style="font-size:0.95rem; font-weight:700; margin-bottom:12px;" id="teacherNameDisplay">-</div>
+        <div style="font-size:0.75rem; color:#7986cb; margin-bottom:6px;">Kode Inisial:</div>
+        <div style="margin-bottom:12px;">
+          <span class="code-display" id="teacherCodeDisplay">-</span>
+        </div>
+      </div>
+      <button class="btn purple" onclick="openChangeCodeModal()">🔑 Ubah Kode Guru</button>
+    </div>
+
+    <div class="card">
+      <div class="danger-zone">
+        <h3>⚠️ Zona Berbahaya</h3>
+        <p>Hapus <b>semua data siswa</b> dari browser ini. Tindakan ini tidak dapat dibatalkan.</p>
+        <button class="btn danger small" onclick="confirmDeleteAll()" style="width:100%;">🗑️ Hapus Semua Data Siswa</button>
+      </div>
+    </div>
+
+    <div class="logout-link">
+      <button class="logout-btn teacher" onclick="doLogout()">
+        <span class="ico">🚪</span> Keluar Akun
+      </button>
+    </div>
+  </div>
+
+  <!-- NAV SISWA -->
+  <div class="nav" id="navSiswa">
+    <button class="active" data-page="materi" onclick="switchPage('materi', this)">
+      <span class="ico">📘</span>Materi
+    </button>
+    <button data-page="viewer" onclick="switchPage('viewer', this)">
+      <span class="ico">⚛️</span>Atom 3D
+    </button>
+    <button data-page="kuis" onclick="switchPage('kuis', this)">
+      <span class="ico">🎯</span>Kuis
+    </button>
+    <button data-page="rank" onclick="switchPage('rank', this)">
+      <span class="ico">🏆</span>Rank
+    </button>
+    <button data-page="profil" onclick="switchPage('profil', this)">
+      <span class="ico">👤</span>Profil
+    </button>
+  </div>
+
+  <!-- NAV GURU -->
+  <div class="nav" id="navGuru" style="display:none;">
+    <button class="active" data-page="dashboard" onclick="switchPage('dashboard', this)">
+      <span class="ico">📊</span>Dashboard
+    </button>
+    <button data-page="materi" onclick="switchPage('materi', this)">
+      <span class="ico">📘</span>Materi
+    </button>
+    <button data-page="viewer" onclick="switchPage('viewer', this)">
+      <span class="ico">⚛️</span>Atom 3D
+    </button>
+    <button data-page="rank" onclick="switchPage('rank', this)">
+      <span class="ico">🏆</span>Rank
+    </button>
+    <button data-page="profil" onclick="switchPage('profil', this)">
+      <span class="ico">👤</span>Profil
+    </button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<!-- =========================================================
+     MODAL KONFIRMASI (hapus/reset)
+========================================================= -->
+<div class="modal-backdrop" id="confirmModal">
+  <div class="modal-box">
+    <h3 id="modalTitle">🗑️ Konfirmasi Hapus</h3>
+    <div class="student-target" id="modalTarget" style="display:none;">
+      <div class="n" id="modalStudentName">-</div>
+      <div class="m" id="modalStudentMeta">-</div>
+    </div>
+    <p id="modalMessage">Apakah Anda yakin ingin menghapus data ini?</p>
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="closeModal()">Batal</button>
+      <button class="modal-confirm" id="modalConfirmBtn">Ya, Hapus</button>
     </div>
   </div>
 </div>
 
-<!-- Login Modal -->
-<div class="modal active" id="modalLogin">
+<!-- =========================================================
+     MODAL LOGOUT
+========================================================= -->
+<div class="modal-backdrop" id="logoutModal">
   <div class="modal-box">
-    <h2>⚛️ Atom Builder</h2>
-    <p>Bangun atom dengan menjawab soal konfigurasi elektron model Bohr!</p>
-    <input type="text" id="inputUser" placeholder="Username" autocomplete="off" maxlength="16">
-    <input type="password" id="inputPass" placeholder="Password" autocomplete="off" maxlength="20">
-    <button class="btn btn-primary" id="btnLogin">Masuk</button>
-    <span class="link" id="linkRegister">Belum punya akun? Daftar</span>
-    <div id="loginMsg" style="font-size:11px;color:#ff6b6b;margin-top:10px;"></div>
+    <h3>👋 Konfirmasi Keluar</h3>
+    <p>Apakah Anda yakin ingin keluar dari akun ini?</p>
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="closeLogoutModal()">Batal</button>
+      <button class="modal-confirm" onclick="confirmLogout()">Ya, Keluar</button>
+    </div>
   </div>
 </div>
 
-<!-- Register Modal -->
-<div class="modal" id="modalRegister">
+<!-- =========================================================
+     MODAL UBAH KODE GURU
+========================================================= -->
+<div class="modal-backdrop" id="changeCodeModal">
   <div class="modal-box">
-    <h2>📝 Daftar Akun</h2>
-    <p>Buat akun untuk menyimpan poin dan badge kamu.</p>
-    <input type="text" id="regUser" placeholder="Username" autocomplete="off" maxlength="16">
-    <input type="password" id="regPass" placeholder="Password" autocomplete="off" maxlength="20">
-    <button class="btn btn-primary" id="btnRegister">Daftar</button>
-    <span class="link" id="linkLogin">Sudah punya akun? Masuk</span>
-    <div id="regMsg" style="font-size:11px;color:#ff6b6b;margin-top:10px;"></div>
+    <h3 style="color:#ce93d8;">🔑 Ubah Kode Guru</h3>
+    <p>Masukkan kode saat ini untuk verifikasi, lalu kode baru Anda.</p>
+
+    <label class="modal-form-label">Kode Saat Ini</label>
+    <input type="text" id="inpOldCode" class="modal-form-input upper" placeholder="Contoh: SR" maxlength="6">
+
+    <label class="modal-form-label">Kode Baru (maks 6 karakter)</label>
+    <input type="text" id="inpNewCode" class="modal-form-input upper" placeholder="Contoh: SR2" maxlength="6">
+
+    <label class="modal-form-label">Konfirmasi Kode Baru</label>
+    <input type="text" id="inpNewCode2" class="modal-form-input upper" placeholder="Ulangi kode baru" maxlength="6">
+
+    <div class="modal-actions" style="margin-top:16px;">
+      <button class="modal-cancel" onclick="closeChangeCodeModal()">Batal</button>
+      <button class="modal-confirm" style="background: linear-gradient(135deg, #6a1b9a, #ad1457);" onclick="submitChangeCode()">Simpan</button>
+    </div>
   </div>
 </div>
 
-<!-- Leaderboard Modal -->
-<div class="modal" id="modalLeaderboard">
-  <div class="modal-box">
-    <h2>🏆 Peringkat Siswa</h2>
-    <p>Berdasarkan total poin yang dikumpulkan</p>
-    <div id="lbList"></div>
-    <button class="btn btn-primary" id="btnCloseLb" style="margin-top:12px;">Tutup</button>
-  </div>
-</div>
-
-<!-- Badge Toast -->
-<div id="badgeToast"><span class="ico">🏅</span><span id="badgeText">Badge baru!</span></div>
-
+<!-- THREE.JS -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
-/* ============================================================
-   DATA UNSUR & SOAL
-   ============================================================ */
-const ELEMENTS = {
-  Na: { name:'Natrium', Z:11, shells:[2,8,1] },
-  Cl: { name:'Klorin',  Z:17, shells:[2,8,7] },
-  Ca: { name:'Kalsium', Z:20, shells:[2,8,8,2] }
+/* =========================================================
+   STORAGE & DB
+========================================================= */
+const STORAGE_KEY = 'bohr_atom_data_v4';
+const DB = {
+  users: {},          // siswa
+  teachers: {},       // guru: { key: {name, code, createdAt, loginAt} }
+  current: null,      // key user siswa yang login
+  currentTeacher: null // key guru yang login
 };
-
-// Bank soal per unsur (10 soal)
-const QUESTION_BANK = {
-  Na: [
-    { q:'Berapa jumlah elektron maksimum pada kulit K (n=1)?', o:['2','8','18','32'], a:0 },
-    { q:'Konfigurasi elektron atom Na (Z=11) adalah...', o:['2,8,1','2,8,2','2,8,8','2,9'], a:0 },
-    { q:'Berapa jumlah elektron valensi atom Na?', o:['1','2','3','8'], a:0 },
-    { q:'Kulit manakah yang terisi penuh pada atom Na?', o:['K dan L','K saja','L saja','M saja'], a:0 },
-    { q:'Jumlah maksimum elektron pada kulit L (n=2) adalah...', o:['8','2','18','32'], a:0 },
-    { q:'Elektron valensi Na berada pada kulit...', o:['M','K','L','N'], a:0 },
-    { q:'Mengapa Na cenderung melepas 1 elektron?', o:['Agar stabil seperti gas mulia','Agar bermuatan negatif','Agar kulit M penuh','Agar menjadi Cl'], a:0 },
-    { q:'Rumus jumlah maksimum elektron kulit ke-n adalah...', o:['2n²','n²','2n','4n'], a:0 },
-    { q:'Atom Na setelah melepas 1 elektron membentuk ion...', o:['Na⁺','Na⁻','Na²⁺','Na²⁻'], a:0 },
-    { q:'Konfigurasi ion Na⁺ adalah...', o:['2,8','2,8,1','2,7','2,8,2'], a:0 }
-  ],
-  Cl: [
-    { q:'Berapa jumlah elektron maksimum pada kulit M (n=3)?', o:['18','8','32','2'], a:0 },
-    { q:'Konfigurasi elektron atom Cl (Z=17) adalah...', o:['2,8,7','2,8,8','2,7,8','2,8,6'], a:0 },
-    { q:'Berapa jumlah elektron valensi atom Cl?', o:['7','8','1','2'], a:0 },
-    { q:'Kulit yang terisi penuh pada atom Cl adalah...', o:['K dan L','K saja','L saja','M saja'], a:0 },
-    { q:'Jumlah maksimum elektron kulit N (n=4) adalah...', o:['32','18','8','2'], a:0 },
-    { q:'Elektron valensi Cl berada pada kulit...', o:['M','K','L','N'], a:0 },
-    { q:'Cl cenderung menangkap 1 elektron agar...', o:['Stabil seperti gas mulia','Menjadi logam','Kulit M kosong','Bermuatan positif'], a:0 },
-    { q:'Atom Cl setelah menangkap 1 elektron membentuk ion...', o:['Cl⁻','Cl⁺','Cl²⁻','Cl²⁺'], a:0 },
-    { q:'Konfigurasi ion Cl⁻ adalah...', o:['2,8,8','2,8,7','2,8,6','2,7,8'], a:0 },
-    { q:'Unsur Cl terletak pada golongan...', o:['VIIA (halogen)','IA','IIA','VIIIA'], a:0 }
-  ],
-  Ca: [
-    { q:'Berapa jumlah elektron maksimum pada kulit N (n=4)?', o:['32','18','8','2'], a:0 },
-    { q:'Konfigurasi elektron atom Ca (Z=20) adalah...', o:['2,8,8,2','2,8,10','2,8,8,1','2,8,9'], a:0 },
-    { q:'Berapa jumlah elektron valensi atom Ca?', o:['2','8','1','4'], a:0 },
-    { q:'Kulit yang terisi penuh pada atom Ca adalah...', o:['K, L, dan M','K dan L','L dan M','K saja'], a:0 },
-    { q:'Jumlah maksimum elektron kulit M (n=3) adalah...', o:['18','8','32','2'], a:0 },
-    { q:'Elektron valensi Ca berada pada kulit...', o:['N','M','L','K'], a:0 },
-    { q:'Ca cenderung melepas 2 elektron agar...', o:['Stabil seperti gas mulia','Menjadi anion','Kulit N penuh','Menjadi Cl'], a:0 },
-    { q:'Atom Ca setelah melepas 2 elektron membentuk ion...', o:['Ca²⁺','Ca⁺','Ca²⁻','Ca⁻'], a:0 },
-    { q:'Konfigurasi ion Ca²⁺ adalah...', o:['2,8,8','2,8,8,2','2,8,7','2,8,10'], a:0 },
-    { q:'Unsur Ca terletak pada golongan...', o:['IIA','IA','IIIA','VIIIA'], a:0 }
-  ]
-};
-
-/* ============================================================
-   PENYIMPANAN DATA (localStorage sebagai JSON)
-   ============================================================ */
-const DB_KEY = 'atomBuilderDB_v1';
 
 function loadDB() {
   try {
-    const raw = localStorage.getItem(DB_KEY);
-    if (raw) return JSON.parse(raw);
-  } catch(e){}
-  return { users: {}, currentUser: null };
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      DB.users = parsed.users || {};
+      DB.teachers = parsed.teachers || {};
+      DB.current = parsed.current || null;
+      DB.currentTeacher = parsed.currentTeacher || null;
+    }
+  } catch(e) { console.warn('Load error', e); }
 }
-function saveDB(db) {
-  localStorage.setItem(DB_KEY, JSON.stringify(db));
+function saveDB() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      users: DB.users,
+      teachers: DB.teachers,
+      current: DB.current,
+      currentTeacher: DB.currentTeacher
+    }));
+  } catch(e) { console.warn('Save error', e); }
 }
-let DB = loadDB();
+function userKey(name, cls, absen) {
+  return (name.trim().toLowerCase()) + '|' + cls + '|' + absen;
+}
+function teacherKey(name) {
+  return name.trim().toLowerCase();
+}
 
-/* ============================================================
-   STATE APLIKASI
-   ============================================================ */
-const State = {
-  user: null,
-  targetKey: 'Na',
-  questions: [],
-  qIndex: 0,
-  electronsPlaced: 0,
-  answered: false,
-  wrongThisQuestion: false,
-  pointsEarned: 0,
-  badgesEarned: 0,
-  unstableTimer: null,
-  atomComplete: false
-};
-
-/* ============================================================
-   THREE.JS - WEBGL SCENE
-   ============================================================ */
-let scene, camera, renderer, nucleus, shellMeshes = [], orbitingElectrons = [];
-let clock, animationId;
-let shakeIntensity = 0;
-let electronLossAnim = null;
-
-function initThree() {
-  const canvas = document.getElementById('glCanvas');
-  renderer = new THREE.WebGLRenderer({ canvas, antialias:true, alpha:true });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  renderer.setSize(window.innerWidth, window.innerHeight);
-
-  scene = new THREE.Scene();
-  scene.fog = new THREE.FogExp2(0x05060f, 0.035);
-
-  camera = new THREE.PerspectiveCamera(55, window.innerWidth/window.innerHeight, 0.1, 200);
-  camera.position.set(0, 4, 16);
-  camera.lookAt(0, 0, 0);
-
-  // Lighting
-  scene.add(new THREE.AmbientLight(0x334466, 1.2));
-  const p1 = new THREE.PointLight(0x00b4ff, 2.5, 50); p1.position.set(6,6,8); scene.add(p1);
-  const p2 = new THREE.PointLight(0x7b2ff7, 2, 50); p2.position.set(-8,-4,-6); scene.add(p2);
-  const p3 = new THREE.PointLight(0x00ffa3, 1.2, 40); p3.position.set(0,-8,4); scene.add(p3);
-
-  // Nucleus
-  nucleus = new THREE.Group();
-  const nucGeo = new THREE.SphereGeometry(1.15, 32, 32);
-  const nucMat = new THREE.MeshPhongMaterial({
-    color:0xff4466, emissive:0xff2244, emissiveIntensity:0.7,
-    shininess:80, specular:0xffffff
-  });
-  const nucMesh = new THREE.Mesh(nucGeo, nucMat);
-  nucleus.add(nucMesh);
-
-  // Glow around nucleus
-  const glowMat = new THREE.MeshBasicMaterial({
-    color:0xff6688, transparent:true, opacity:0.18, side:THREE.BackSide
-  });
-  const glow = new THREE.Mesh(new THREE.SphereGeometry(1.6, 24, 24), glowMat);
-  nucleus.add(glow);
-  scene.add(nucleus);
-
-  // Starfield background
-  const starGeo = new THREE.BufferGeometry();
-  const starCount = 800;
-  const positions = new Float32Array(starCount*3);
-  for (let i=0;i<starCount;i++){
-    positions[i*3]   = (Math.random()-0.5)*120;
-    positions[i*3+1] = (Math.random()-0.5)*120;
-    positions[i*3+2] = (Math.random()-0.5)*120;
+/* =========================================================
+   LOGIN
+========================================================= */
+let loginMode = 'siswa';
+function switchLoginTab(mode) {
+  loginMode = mode;
+  const tabS = document.getElementById('tabSiswa');
+  const tabG = document.getElementById('tabGuru');
+  const formS = document.getElementById('formSiswa');
+  const formG = document.getElementById('formGuru');
+  if (mode === 'siswa') {
+    tabS.classList.add('active'); tabS.classList.remove('teacher-tab');
+    tabG.classList.remove('active');
+    formS.style.display = 'block'; formG.style.display = 'none';
+  } else {
+    tabG.classList.add('active', 'teacher-tab');
+    tabS.classList.remove('active');
+    formS.style.display = 'none'; formG.style.display = 'block';
   }
-  starGeo.setAttribute('position', new THREE.BufferAttribute(positions,3));
-  const starMat = new THREE.PointsMaterial({ color:0x88bbff, size:0.25, transparent:true, opacity:0.6 });
-  scene.add(new THREE.Points(starGeo, starMat));
+}
 
-  clock = new THREE.Clock();
+function doLoginSiswa() {
+  const name = document.getElementById('inpName').value.trim();
+  const cls = document.getElementById('inpClass').value;
+  const absen = parseInt(document.getElementById('inpAbsen').value);
+
+  if (!name) return toast('Nama tidak boleh kosong', 'error');
+  if (!cls) return toast('Pilih kelas terlebih dahulu', 'error');
+  if (!absen || absen < 1 || absen > 40) return toast('Nomor absen harus 1-40', 'error');
+
+  const key = userKey(name, cls, absen);
+  if (!DB.users[key]) {
+    DB.users[key] = {
+      name, class: cls, absen,
+      best: 0, total: 0,
+      badges: [],
+      history: [],
+      quizDone: false,
+      createdAt: Date.now()
+    };
+    toast('Akun baru dibuat! Selamat datang 🎉', 'success');
+  } else {
+    toast('Selamat datang kembali, ' + name.split(' ')[0] + '!', 'success');
+  }
+  DB.current = key;
+  DB.currentTeacher = null;
+  saveDB();
+  enterApp('siswa');
+}
+
+/* =========================================================
+   LOGIN GURU — Sistem Login Sederhana
+   - Pertama kali: daftar otomatis (nama + kode)
+   - Login berikutnya: nama + kode harus SAMA
+========================================================= */
+function doLoginGuru() {
+  const name = document.getElementById('inpTeacherName').value.trim();
+  const code = document.getElementById('inpTeacherCode').value.trim().toUpperCase();
+
+  if (!name) return toast('Nama guru tidak boleh kosong', 'error');
+  if (!code) return toast('Kode guru tidak boleh kosong', 'error');
+  if (code.length < 2) return toast('Kode minimal 2 karakter', 'error');
+  if (code.length > 6) return toast('Kode maksimal 6 karakter', 'error');
+
+  const key = teacherKey(name);
+  const existing = DB.teachers[key];
+
+  if (!existing) {
+    // Cek apakah kode sudah dipakai guru lain
+    const codeTaken = Object.values(DB.teachers).some(t => t.code.toUpperCase() === code && teacherKey(t.name) !== key);
+    if (codeTaken) {
+      return toast('❌ Kode "' + code + '" sudah dipakai guru lain. Gunakan kode berbeda.', 'error');
+    }
+
+    // Daftar guru baru
+    DB.teachers[key] = {
+      name: name,
+      code: code,
+      createdAt: Date.now(),
+      loginAt: Date.now()
+    };
+    toast('✅ Akun guru baru dibuat! Kode Anda: ' + code, 'success');
+  } else {
+    // Cek kode cocok
+    if (existing.code.toUpperCase() !== code) {
+      return toast('❌ Kode guru salah! Gunakan kode yang sama seperti saat mendaftar.', 'error');
+    }
+    existing.loginAt = Date.now();
+    toast('Selamat datang kembali, ' + name.split(' ')[0] + '!', 'success');
+  }
+
+  DB.currentTeacher = key;
+  DB.current = null;
+  saveDB();
+  enterApp('guru');
+}
+
+/* =========================================================
+   LOGOUT (MODAL CUSTOM)
+========================================================= */
+function doLogout() {
+  document.getElementById('logoutModal').classList.add('show');
+}
+function closeLogoutModal() {
+  document.getElementById('logoutModal').classList.remove('show');
+}
+function confirmLogout() {
+  const wasTeacher = !!DB.currentTeacher;
+  const name = wasTeacher
+    ? (DB.teachers[DB.currentTeacher] ? DB.teachers[DB.currentTeacher].name : '')
+    : (DB.users[DB.current] ? DB.users[DB.current].name : '');
+
+  DB.current = null;
+  DB.currentTeacher = null;
+  saveDB();
+
+  closeLogoutModal();
+
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('loginScreen').classList.remove('hidden');
+
+  document.getElementById('inpName').value = '';
+  document.getElementById('inpClass').value = '';
+  document.getElementById('inpAbsen').value = '';
+  document.getElementById('inpTeacherName').value = '';
+  document.getElementById('inpTeacherCode').value = '';
+
+  switchLoginTab('siswa');
+  window.scrollTo(0, 0);
+
+  toast('👋 Berhasil keluar. Sampai jumpa, ' + (name ? name.split(' ')[0] : '') + '!', 'success');
+}
+
+/* =========================================================
+   ENTER APP
+========================================================= */
+function enterApp(role) {
+  document.getElementById('loginScreen').classList.add('hidden');
+  document.getElementById('app').style.display = 'block';
+
+  const header = document.getElementById('appHeader');
+  const navS = document.getElementById('navSiswa');
+  const navG = document.getElementById('navGuru');
+  const pages = document.querySelectorAll('.page');
+
+  if (role === 'guru') {
+    header.classList.add('teacher');
+    document.getElementById('headerTitle').textContent = '👨‍🏫 Dashboard Guru';
+    document.getElementById('headerSub').textContent = 'Pantau hasil kuis siswa';
+    navS.style.display = 'none';
+    navG.style.display = 'flex';
+    pages.forEach(p => p.classList.remove('active'));
+    document.getElementById('page-dashboard').classList.add('active');
+    navG.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+    navG.querySelector('button[data-page="dashboard"]').classList.add('active');
+    renderTeacherDashboard();
+  } else {
+    header.classList.remove('teacher');
+    document.getElementById('headerTitle').textContent = '⚛️ Konfigurasi Elektron Atom Bohr';
+    document.getElementById('headerSub').textContent = 'Kimia Kelas 10 • Kulit K, L, M, N';
+    navS.style.display = 'flex';
+    navG.style.display = 'none';
+    pages.forEach(p => p.classList.remove('active'));
+    document.getElementById('page-materi').classList.add('active');
+    navS.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+    navS.querySelector('button[data-page="materi"]').classList.add('active');
+
+    updateProfileUI();
+    buildElementGrid();
+    selectElement('Na');
+    renderLeaderboard();
+    resetQuizIntro();
+    updateQuizLockState();
+    buildPracticeSets();
+  }
+}
+
+/* =========================================================
+   NAVIGATION
+========================================================= */
+function switchPage(page, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const target = document.getElementById('page-' + page);
+  if (!target) return;
+  target.classList.add('active');
+
+  const nav = DB.currentTeacher ? document.getElementById('navGuru') : document.getElementById('navSiswa');
+  nav.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+
+  window.scrollTo({top:0, behavior:'smooth'});
+
+  if (page === 'rank') renderLeaderboard();
+  if (page === 'profil') updateProfileUI();
+  if (page === 'viewer') setTimeout(() => { if (renderer) onResize(); }, 50);
+  if (page === 'kuis') { updateQuizLockState(); }
+  if (page === 'dashboard') renderTeacherDashboard();
+}
+
+/* =========================================================
+   TOAST
+========================================================= */
+let toastTimer;
+function toast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = '';
+  if (type) t.classList.add(type);
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+/* =========================================================
+   DATA UNSUR
+========================================================= */
+const ELEMENTS = [
+  {sym:'H', name:'Hidrogen', z:1},   {sym:'He', name:'Helium', z:2},
+  {sym:'Li', name:'Litium', z:3},    {sym:'Be', name:'Berilium', z:4},
+  {sym:'B', name:'Boron', z:5},      {sym:'C', name:'Karbon', z:6},
+  {sym:'N', name:'Nitrogen', z:7},   {sym:'O', name:'Oksigen', z:8},
+  {sym:'F', name:'Fluor', z:9},      {sym:'Ne', name:'Neon', z:10},
+  {sym:'Na', name:'Natrium', z:11},  {sym:'Mg', name:'Magnesium', z:12},
+  {sym:'Al', name:'Aluminium', z:13},{sym:'Si', name:'Silikon', z:14},
+  {sym:'P', name:'Fosfor', z:15},    {sym:'S', name:'Belerang', z:16},
+  {sym:'Cl', name:'Klorin', z:17},   {sym:'Ar', name:'Argon', z:18},
+  {sym:'K', name:'Kalium', z:19},    {sym:'Ca', name:'Kalsium', z:20},
+  {sym:'Kr', name:'Kripton', z:36},  {sym:'Sr', name:'Stronsium', z:38},
+  {sym:'In', name:'Indium', z:49},   {sym:'Tl', name:'Talium', z:81}
+];
+const SHELL_NAMES = ['K','L','M','N','O','P'];
+
+function getBohrConfig(z) {
+  const shells = [];
+  let remaining = z;
+  if (remaining > 0) { const put = Math.min(2, remaining); shells.push(put); remaining -= put; }
+  if (remaining > 0) { const put = Math.min(8, remaining); shells.push(put); remaining -= put; }
+  if (remaining > 0) {
+    let put; if (remaining > 18) put = 18; else if (remaining >= 8) put = 8; else put = remaining;
+    shells.push(put); remaining -= put;
+  }
+  if (remaining > 0) {
+    let put;
+    if (remaining > 32) put = 32;
+    else if (remaining >= 18) put = 18;
+    else if (remaining >= 8) put = 8;
+    else put = remaining;
+    shells.push(put); remaining -= put;
+  }
+  let n = 5;
+  while (remaining > 0 && n <= 7) {
+    const max = 2 * n * n;
+    let put;
+    if (remaining > max) put = max;
+    else if (remaining >= 18) put = 18;
+    else if (remaining >= 8) put = 8;
+    else put = remaining;
+    shells.push(put); remaining -= put;
+    n++;
+  }
+  return shells;
+}
+function configString(shells) { return shells.map((e,i) => SHELL_NAMES[i] + '=' + e).join(', '); }
+function configShort(shells) { return shells.map((e,i) => SHELL_NAMES[i] + e).join(' '); }
+function configNumeric(shells) { return shells.join(', '); }
+
+/* =========================================================
+   3D VIEWER
+========================================================= */
+let scene, camera, renderer, animationId;
+let nucleus, electronObjs = [], shellRings = [];
+let rotating = true, currentZ = 11, autoRotateAngle = 0;
+let cameraRadius = 16;
+
+function init3D() {
+  const canvas = document.getElementById('canvas3d');
+  const w = canvas.clientWidth, h = canvas.clientHeight;
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x05081a);
+  camera = new THREE.PerspectiveCamera(50, w/h, 0.1, 1000);
+  camera.position.set(0, 5, cameraRadius);
+  camera.lookAt(0,0,0);
+  renderer = new THREE.WebGLRenderer({canvas, antialias:true, alpha:false});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setSize(w, h, false);
   animate();
 }
 
-function buildShells(shellConfig) {
-  // Hapus shell lama
-  shellMeshes.forEach(s => scene.remove(s));
-  shellMeshes = [];
+function buildAtom(z) {
+  while(scene.children.length > 0) scene.remove(scene.children[0]);
 
-  const colors = [0x00d4ff, 0x7b2ff7, 0x00ffa3, 0xffaa00];
-  const baseRadius = 2.6;
-  const gap = 1.5;
+  scene.add(new THREE.AmbientLight(0x6060a0, 1.3));
+  const p1 = new THREE.PointLight(0x4fc3f7, 2.2, 120); p1.position.set(12,12,12); scene.add(p1);
+  const p2 = new THREE.PointLight(0xff7043, 1.6, 120); p2.position.set(-12,-6,-12); scene.add(p2);
 
-  shellConfig.forEach((cap, i) => {
-    const r = baseRadius + i*gap;
-    // Ring (torus) sebagai lintasan
-    const ringGeo = new THREE.TorusGeometry(r, 0.035, 8, 80);
-    const ringMat = new THREE.MeshBasicMaterial({
-      color: colors[i % colors.length], transparent:true, opacity:0.55
-    });
+  const starGeo = new THREE.BufferGeometry();
+  const starPos = [];
+  for (let i=0;i<400;i++) starPos.push((Math.random()-0.5)*100,(Math.random()-0.5)*100,(Math.random()-0.5)*100);
+  starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starPos,3));
+  scene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({color:0x4fc3f7, size:0.14, transparent:true, opacity:0.55})));
+
+  electronObjs = []; shellRings = [];
+
+  const nucR = 0.55 + Math.log(z+1)*0.20;
+  const nucGeo = new THREE.SphereGeometry(nucR, 32, 32);
+  const nucMat = new THREE.MeshPhongMaterial({color: 0xff5252, emissive: 0x8b0000, emissiveIntensity: 0.7, shininess: 90});
+  nucleus = new THREE.Mesh(nucGeo, nucMat);
+  scene.add(nucleus);
+
+  const glowGeo = new THREE.SphereGeometry(nucR*1.5, 24, 24);
+  const glowMat = new THREE.MeshBasicMaterial({color:0xff7043, transparent:true, opacity:0.13});
+  scene.add(new THREE.Mesh(glowGeo, glowMat));
+
+  const zCanvas = document.createElement('canvas');
+  zCanvas.width = 160; zCanvas.height = 80;
+  const zCtx = zCanvas.getContext('2d');
+  zCtx.fillStyle = '#fff'; zCtx.font = 'bold 44px Arial';
+  zCtx.textAlign = 'center'; zCtx.textBaseline = 'middle';
+  zCtx.fillText('+' + z, 80, 40);
+  const zTex = new THREE.CanvasTexture(zCanvas);
+  const zSprite = new THREE.Sprite(new THREE.SpriteMaterial({map:zTex, transparent:true}));
+  zSprite.scale.set(1.8, 0.9, 1);
+  zSprite.position.y = nucR + 0.9;
+  scene.add(zSprite);
+
+  const lblCanvas = document.createElement('canvas');
+  lblCanvas.width = 200; lblCanvas.height = 60;
+  const lblCtx = lblCanvas.getContext('2d');
+  lblCtx.fillStyle = '#ffab91'; lblCtx.font = 'bold 30px Arial';
+  lblCtx.textAlign = 'center'; lblCtx.textBaseline = 'middle';
+  lblCtx.fillText('Inti atom', 100, 30);
+  const lblTex = new THREE.CanvasTexture(lblCanvas);
+  const lblSprite = new THREE.Sprite(new THREE.SpriteMaterial({map:lblTex, transparent:true}));
+  lblSprite.scale.set(2.2, 0.65, 1);
+  lblSprite.position.y = -nucR - 1.0;
+  scene.add(lblSprite);
+
+  const shells = getBohrConfig(z);
+  const baseR = nucR + 1.6;
+  const shellColors = [0x4fc3f7, 0x00897b, 0xffb74d, 0xba68c8, 0xef5350, 0x26c6da];
+
+  shells.forEach((count, si) => {
+    const radius = baseR + si * 1.35;
+    const color = shellColors[si % shellColors.length];
+
+    const ringGeo = new THREE.TorusGeometry(radius, 0.03, 8, 80);
+    const ringMat = new THREE.MeshBasicMaterial({color: color, transparent: true, opacity: 0.55});
     const ring = new THREE.Mesh(ringGeo, ringMat);
     ring.rotation.x = Math.PI/2;
-    ring.userData = { radius:r, color:colors[i % colors.length], shellIndex:i, capacity:cap };
     scene.add(ring);
-    shellMeshes.push(ring);
+    shellRings.push(ring);
+
+    const sCanvas = document.createElement('canvas');
+    sCanvas.width = 80; sCanvas.height = 80;
+    const sCtx = sCanvas.getContext('2d');
+    sCtx.fillStyle = '#' + color.toString(16).padStart(6,'0');
+    sCtx.font = 'bold 50px Arial';
+    sCtx.textAlign = 'center'; sCtx.textBaseline = 'middle';
+    sCtx.fillText(SHELL_NAMES[si], 40, 40);
+    const sTex = new THREE.CanvasTexture(sCanvas);
+    const sSprite = new THREE.Sprite(new THREE.SpriteMaterial({map:sTex, transparent:true}));
+    sSprite.scale.set(0.9, 0.9, 1);
+    sSprite.position.set(radius + 0.5, 0.2, 0);
+    scene.add(sSprite);
+
+    const eGeo = new THREE.SphereGeometry(0.18, 14, 14);
+    const eMat = new THREE.MeshPhongMaterial({color: color, emissive: color, emissiveIntensity: 0.9, shininess: 100});
+
+    for (let e = 0; e < count; e++) {
+      const mesh = new THREE.Mesh(eGeo, eMat);
+      const angle = (e / count) * Math.PI * 2;
+      mesh.userData = { radius, angle, speed: 0.7 / (si + 1) + 0.18 };
+      scene.add(mesh);
+      electronObjs.push(mesh);
+
+      const trailGeo = new THREE.SphereGeometry(0.30, 8, 8);
+      const trailMat = new THREE.MeshBasicMaterial({color: color, transparent: true, opacity: 0.18});
+      mesh.userData.trail = new THREE.Mesh(trailGeo, trailMat);
+      scene.add(mesh.userData.trail);
+    }
   });
-}
 
-function addElectron(shellIndex, totalInShell) {
-  // shellIndex = 0 (K), 1 (L), dst
-  if (shellIndex >= shellMeshes.length) return;
-  const shell = shellMeshes[shellIndex];
-  const r = shell.userData.radius;
-  const color = shell.userData.color;
-
-  const geo = new THREE.SphereGeometry(0.22, 16, 16);
-  const mat = new THREE.MeshPhongMaterial({
-    color: color, emissive: color, emissiveIntensity:1.2, shininess:100
-  });
-  const e = new THREE.Mesh(geo, mat);
-
-  // Posisi awal: sudut tersebar
-  const angle = (totalInShell / shell.userData.capacity) * Math.PI * 2;
-  const tilt = shellIndex * 0.4;
-  e.userData = {
-    radius: r,
-    angle: angle,
-    speed: 0.9 + shellIndex*0.25,
-    tilt: tilt,
-    shellIndex: shellIndex
-  };
-  // Set posisi awal
-  updateElectronPosition(e);
-  scene.add(e);
-  orbitingElectrons.push(e);
-
-  // Animasi "pop" masuk
-  e.scale.set(0.1,0.1,0.1);
-  const start = performance.now();
-  function popAnim(t){
-    const p = Math.min((t-start)/350, 1);
-    const s = p < 0.5 ? p*2 : 1 + Math.sin((p-0.5)*Math.PI)*0.3;
-    e.scale.set(s,s,s);
-    if (p < 1) requestAnimationFrame(popAnim);
-    else e.scale.set(1,1,1);
-  }
-  requestAnimationFrame(popAnim);
-}
-
-function updateElectronPosition(e) {
-  const u = e.userData;
-  const x = Math.cos(u.angle) * u.radius;
-  const z = Math.sin(u.angle) * u.radius;
-  // Tilt orbit
-  const y = Math.sin(u.angle) * u.radius * Math.sin(u.tilt);
-  const zz = Math.sin(u.angle) * u.radius * Math.cos(u.tilt);
-  e.position.set(x, y, zz);
-}
-
-function removeLastElectron() {
-  // Animasi elektron terlepas
-  if (orbitingElectrons.length === 0) return;
-  const e = orbitingElectrons.pop();
-  const start = performance.now();
-  const startPos = e.position.clone();
-  const dir = startPos.clone().normalize();
-  function fly(t){
-    const p = Math.min((t-start)/600, 1);
-    const dist = p * 20;
-    e.position.copy(startPos).add(dir.multiplyScalar(dist));
-    e.material.opacity = 1-p;
-    e.material.transparent = true;
-    e.scale.multiplyScalar(0.97);
-    if (p < 1) requestAnimationFrame(fly);
-    else scene.remove(e);
-  }
-  requestAnimationFrame(fly);
-}
-
-function clearAllElectrons() {
-  orbitingElectrons.forEach(e => scene.remove(e));
-  orbitingElectrons = [];
+  cameraRadius = Math.max(14, baseR + shells.length * 1.6 + 4);
+  updateViewerInfo(z, shells);
 }
 
 function animate() {
   animationId = requestAnimationFrame(animate);
-  const dt = clock.getDelta();
-  const t = clock.elapsedTime;
+  const t = performance.now() * 0.001;
+  if (nucleus) nucleus.rotation.y += 0.006;
+  if (rotating) autoRotateAngle += 0.0035;
 
-  // Rotasi inti
-  nucleus.rotation.y += dt * 0.4;
-  nucleus.rotation.x += dt * 0.15;
-
-  // Getaran inti jika tidak stabil
-  if (shakeIntensity > 0.01) {
-    nucleus.position.x = (Math.random()-0.5) * shakeIntensity;
-    nucleus.position.y = (Math.random()-0.5) * shakeIntensity;
-    nucleus.position.z = (Math.random()-0.5) * shakeIntensity;
-    shakeIntensity *= 0.96;
-  } else {
-    nucleus.position.set(0,0,0);
-    shakeIntensity = 0;
-  }
-
-  // Gerak elektron
-  orbitingElectrons.forEach(e => {
-    e.userData.angle += dt * e.userData.speed;
-    updateElectronPosition(e);
+  electronObjs.forEach(e => {
+    const d = e.userData;
+    const ang = d.angle + t * d.speed;
+    e.position.set(Math.cos(ang)*d.radius, 0, Math.sin(ang)*d.radius);
+    if (d.trail) d.trail.position.copy(e.position);
   });
 
-  // Rotasi ring
-  shellMeshes.forEach((s,i) => {
-    s.rotation.z += dt * 0.1 * (i+1);
-  });
-
-  // Kamera sedikit orbit
-  camera.position.x = Math.sin(t*0.15) * 1.5;
-  camera.position.y = 4 + Math.sin(t*0.2) * 0.8;
+  camera.position.x = Math.sin(autoRotateAngle) * cameraRadius;
+  camera.position.z = Math.cos(autoRotateAngle) * cameraRadius;
+  camera.position.y = 5 + Math.sin(autoRotateAngle*0.6) * 2.5;
   camera.lookAt(0,0,0);
-
   renderer.render(scene, camera);
 }
-
+function toggleRotate() {
+  rotating = !rotating;
+  document.getElementById('btnRotate').textContent = rotating ? '⏸' : '▶';
+}
+function resetView() {
+  autoRotateAngle = 0;
+  camera.position.set(0, 5, cameraRadius);
+  camera.lookAt(0,0,0);
+}
 function onResize() {
-  if (!renderer) return;
-  camera.aspect = window.innerWidth/window.innerHeight;
+  const canvas = document.getElementById('canvas3d');
+  if (!canvas || !renderer) return;
+  const w = canvas.clientWidth, h = canvas.clientHeight;
+  camera.aspect = w/h;
   camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setSize(w, h, false);
 }
 window.addEventListener('resize', onResize);
 
-/* ============================================================
-   LOGIKA GAME
-   ============================================================ */
-function shuffleArray(arr) {
-  const a = [...arr];
-  for (let i=a.length-1;i>0;i--){
-    const j = Math.floor(Math.random()*(i+1));
-    [a[i],a[j]] = [a[j],a[i]];
+function updateViewerInfo(z, shells) {
+  const el = ELEMENTS.find(e => e.z === z);
+  document.getElementById('vElement').textContent = el ? el.sym : '?';
+  document.getElementById('vZ').textContent = z;
+  document.getElementById('vConfig').textContent = configShort(shells);
+  document.getElementById('configBohr').textContent = configNumeric(shells);
+
+  const sd = document.getElementById('shellDisplay');
+  sd.innerHTML = shells.map((count, i) =>
+    `<div class="shell-row">
+      <span class="shell-name">${SHELL_NAMES[i]}</span>
+      <span class="shell-electrons">${'●'.repeat(Math.min(count,20))}${count>20?'…':''}</span>
+      <span class="shell-count">${count} e⁻</span>
+    </div>`
+  ).join('');
+}
+
+function buildElementGrid() {
+  const grid = document.getElementById('elemGrid');
+  grid.innerHTML = ELEMENTS.map(e =>
+    `<button class="elem-btn" data-sym="${e.sym}" onclick="selectElement('${e.sym}')">${e.sym}<br><small style="font-size:0.6rem;opacity:0.7;">Z=${e.z}</small></button>`
+  ).join('');
+}
+function selectElement(sym) {
+  const el = ELEMENTS.find(e => e.sym === sym);
+  if (!el) return;
+  currentZ = el.z;
+  document.querySelectorAll('.elem-btn').forEach(b => b.classList.toggle('active', b.dataset.sym === sym));
+  buildAtom(el.z);
+}
+
+/* =========================================================
+   LATIHAN
+========================================================= */
+const PRACTICE_1 = [
+  {sym:'Be', name:'Berilium', z:4}, {sym:'C', name:'Karbon', z:6},
+  {sym:'O', name:'Oksigen', z:8},   {sym:'Na', name:'Natrium', z:11},
+  {sym:'Al', name:'Aluminium', z:13},{sym:'Si', name:'Silikon', z:14}
+];
+const PRACTICE_2 = [
+  {sym:'S', name:'Belerang', z:16}, {sym:'Ar', name:'Argon', z:18},
+  {sym:'K', name:'Kalium', z:19},   {sym:'Ge', name:'Germanium', z:32},
+  {sym:'Rb', name:'Rubidium', z:37},{sym:'Sb', name:'Antimon', z:51},
+  {sym:'I', name:'Iodin', z:53},    {sym:'Pb', name:'Timbal', z:82},
+  {sym:'Po', name:'Polonium', z:84},{sym:'Rn', name:'Radon', z:86}
+];
+function buildPracticeSets() {
+  const s1 = document.getElementById('practiceSet1');
+  s1.innerHTML = PRACTICE_1.map((el, i) => {
+    const conf = configNumeric(getBohrConfig(el.z));
+    return `<div class="practice-item">
+      <div class="pq">
+        <b>${i+1}. ${el.name} (${el.sym})</b> — Z = ${el.z}
+        <div style="font-size:0.72rem;color:#7986cb;margin-top:2px;">Konfigurasi: <span class="pa" id="p1-${i}" style="display:none;">${conf}</span></div>
+      </div>
+      <button onclick="togglePractice('p1-${i}')">👁</button>
+    </div>`;
+  }).join('');
+
+  const s2 = document.getElementById('practiceSet2');
+  s2.innerHTML = PRACTICE_2.map((el, i) => {
+    const conf = configNumeric(getBohrConfig(el.z));
+    return `<div class="practice-item">
+      <div class="pq">
+        <b>${i+1}. ${el.name} (${el.sym})</b> — Z = ${el.z}
+        <div style="font-size:0.72rem;color:#7986cb;margin-top:2px;">Konfigurasi: <span class="pa" id="p2-${i}" style="display:none;">${conf}</span></div>
+      </div>
+      <button onclick="togglePractice('p2-${i}')">👁</button>
+    </div>`;
+  }).join('');
+}
+function togglePractice(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.style.display = el.style.display === 'none' ? 'inline' : 'none';
+}
+
+/* =========================================================
+   QUIZ
+========================================================= */
+const QUESTIONS = [
+  {q:"Berapa jumlah elektron maksimal pada kulit K (n=1)?", o:["2","8","18","32"], a:0,
+   e:"Kulit K memiliki n=1, sehingga maksimal 2n² = 2(1)² = 2 elektron."},
+  {q:"Konfigurasi elektron atom Natrium (Na, Z=11) menurut Bohr adalah...", o:["K=2, L=8, M=1","K=2, L=9","K=2, L=8, M=2","K=8, L=3"], a:0,
+   e:"11 elektron: K penuh (2), L penuh (8), sisa 1 di M. Jadi 2, 8, 1."},
+  {q:"Atom Klorin (Cl, Z=17) memiliki konfigurasi elektron...", o:["2, 8, 7","2, 8, 8","2, 9, 6","2, 7, 8"], a:0,
+   e:"Cl: K=2, L=8, M=7. Kulit M diisi 7 (sisa < 8)."},
+  {q:"Berapa kapasitas maksimum elektron pada kulit M (n=3)?", o:["8","18","32","2"], a:1,
+   e:"Kulit M memiliki n=3, maksimal 2n² = 2(3)² = 18 elektron."},
+  {q:"Konfigurasi elektron atom Oksigen (O, Z=8) adalah...", o:["2, 6","2, 8","8","2, 4, 2"], a:0,
+   e:"8 elektron: K penuh (2), sisa 6 di L. Jadi 2, 6."},
+  {q:"Atom Kalsium (Ca, Z=20) memiliki konfigurasi Bohr...", o:["2, 8, 8, 2","2, 8, 10","2, 8, 8, 1","2, 9, 9"], a:0,
+   e:"20 elektron: K=2, L=8, M=8 (karena sisa 10, dan 8 ≤ 10 < 18 → isi 8), N=2."},
+  {q:"Elektron valensi adalah elektron yang berada di...", o:["Kulit terdalam","Kulit terluar","Inti atom","Semua kulit"], a:1,
+   e:"Elektron valensi berada di kulit terluar dan menentukan sifat kimia atom."},
+  {q:"Atom Magnesium (Mg, Z=12) memiliki elektron pada kulit L sebanyak...", o:["2","8","10","12"], a:1,
+   e:"Mg: K=2, L=8, M=2. Kulit L berisi 8 elektron."},
+  {q:"Menurut Bohr, elektron bergerak mengelilingi inti pada...", o:["Sembarang tempat","Lintasan (kulit) tertentu","Dalam inti atom","Antara kulit"], a:1,
+   e:"Bohr menyatakan elektron bergerak pada lintasan (kulit) tertentu dengan tingkat energi tertentu."},
+  {q:"Atom Neon (Ne, Z=10) memiliki konfigurasi elektron...", o:["2, 8","2, 6, 2","8, 2","2, 7, 1"], a:0,
+   e:"Ne: 10 elektron → K=2, L=8. Kulit terluar penuh (oktet)."}
+];
+
+let quizState = { idx:0, score:0, correct:0, answered:false, order:[] };
+
+function updateQuizLockState() {
+  const u = DB.users[DB.current];
+  if (!u) return;
+  const startArea = document.getElementById('quizStartBtnArea');
+  const lockedArea = document.getElementById('quizLockedArea');
+  if (u.quizDone) {
+    startArea.style.display = 'none';
+    lockedArea.style.display = 'block';
+  } else {
+    startArea.style.display = 'block';
+    lockedArea.style.display = 'none';
   }
-  return a;
 }
 
-function pickTarget() {
-  const keys = Object.keys(ELEMENTS);
-  return keys[Math.floor(Math.random()*keys.length)];
+function resetQuizIntro() {
+  document.getElementById('quizIntro').style.display = 'block';
+  document.getElementById('quizPlay').style.display = 'none';
+  document.getElementById('quizResult').style.display = 'none';
+  document.getElementById('quizResult').innerHTML = '';
+  updateQuizLockState();
 }
 
-function startNewAtom() {
-  State.targetKey = pickTarget();
-  const el = ELEMENTS[State.targetKey];
-  State.questions = shuffleArray(QUESTION_BANK[State.targetKey]).slice(0,10);
-  State.qIndex = 0;
-  State.electronsPlaced = 0;
-  State.answered = false;
-  State.wrongThisQuestion = false;
-  State.pointsEarned = 0;
-  State.atomComplete = false;
-
-  // Reset UI
-  document.getElementById('targetAtom').textContent = `${el.name} (${State.targetKey})`;
-  document.getElementById('electronCount').textContent = '0';
-  document.getElementById('electronTarget').textContent = el.Z;
-  document.getElementById('btnNext').disabled = true;
-  document.getElementById('btnNext').textContent = 'Lanjut';
-  hideFeedback();
-  updateShellChips();
-
-  // Reset 3D
-  clearAllElectrons();
-  buildShells(el.shells);
-
-  renderQuestion();
+function startQuiz() {
+  const u = DB.users[DB.current];
+  if (!u) return;
+  if (u.quizDone) {
+    toast('❌ Kuis sudah pernah dikerjakan. Tidak dapat diulang.', 'error');
+    return;
+  }
+  quizState = { idx:0, score:0, correct:0, answered:false, order:[...Array(QUESTIONS.length).keys()] };
+  for (let i = quizState.order.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i+1));
+    [quizState.order[i], quizState.order[j]] = [quizState.order[j], quizState.order[i]];
+  }
+  document.getElementById('quizIntro').style.display = 'none';
+  document.getElementById('quizPlay').style.display = 'block';
+  document.getElementById('quizResult').style.display = 'none';
+  showQuestion();
 }
 
-function updateShellChips() {
-  const el = ELEMENTS[State.targetKey];
-  const container = document.getElementById('shells');
-  container.innerHTML = '';
-  const shellNames = ['K','L','M','N'];
+function showQuestion() {
+  const qIdx = quizState.order[quizState.idx];
+  const q = QUESTIONS[qIdx];
+  quizState.answered = false;
 
-  // Hitung elektron per shell berdasarkan electronsPlaced
-  const counts = new Array(el.shells.length).fill(0);
-  let remaining = State.electronsPlaced;
-  for (let i=0;i<el.shells.length;i++){
-    const fill = Math.min(remaining, el.shells[i]);
-    counts[i] = fill;
-    remaining -= fill;
+  document.getElementById('qNum').textContent = quizState.idx + 1;
+  document.getElementById('qScore').textContent = quizState.score;
+  document.getElementById('qText').textContent = q.q;
+
+  const prog = (quizState.idx / QUESTIONS.length) * 100;
+  document.getElementById('quizProgress').style.width = prog + '%';
+
+  const opts = document.getElementById('qOptions');
+  const fb = document.getElementById('qFeedback');
+  fb.classList.remove('show', 'ok', 'no');
+  fb.innerHTML = '';
+  document.getElementById('qNext').style.display = 'none';
+  document.getElementById('qNext').textContent = quizState.idx === QUESTIONS.length-1 ? 'Lihat Hasil →' : 'Soal Berikutnya →';
+
+  opts.innerHTML = q.o.map((opt, i) =>
+    `<button class="quiz-opt" data-i="${i}" onclick="answerQuiz(${i})">${String.fromCharCode(65+i)}. ${opt}</button>`
+  ).join('');
+}
+
+function answerQuiz(selected) {
+  if (quizState.answered) return;
+  quizState.answered = true;
+
+  const qIdx = quizState.order[quizState.idx];
+  const q = QUESTIONS[qIdx];
+  const opts = document.querySelectorAll('#qOptions .quiz-opt');
+  const fb = document.getElementById('qFeedback');
+
+  opts.forEach((btn, i) => {
+    btn.classList.add('disabled');
+    if (i === q.a) btn.classList.add('correct');
+    if (i === selected && selected !== q.a) btn.classList.add('wrong');
+  });
+
+  if (selected === q.a) {
+    quizState.score += 10;
+    quizState.correct++;
+    fb.className = 'feedback show ok';
+    fb.innerHTML = '✅ <b>Benar!</b> +10 poin<br>' + q.e;
+  } else {
+    fb.className = 'feedback show no';
+    fb.innerHTML = '❌ <b>Kurang tepat.</b> Jawaban benar: <b>' + String.fromCharCode(65+q.a) + '. ' + q.o[q.a] + '</b><br>' + q.e;
   }
 
-  el.shells.forEach((cap, i) => {
-    const chip = document
+  document.getElementById('qScore').textContent = quizState.score;
+  document.getElementById('qNext').style.display = 'block';
+}
+
+function nextQuestion() {
+  quizState.idx++;
+  if (quizState.idx >= QUESTIONS.length) finishQuiz();
+  else showQuestion();
+}
+
+function finishQuiz() {
+  document.getElementById('quizProgress').style.width = '100%';
+  document.getElementById('quizPlay').style.display = 'none';
+
+  const u = DB.users[DB.current];
+  const score = quizState.score;
+  const pct = Math.round((quizState.correct / QUESTIONS.length) * 100);
+
+  u.total = (u.total || 0) + 1;
+  u.history = u.history || [];
+  u.history.push({score, correct: quizState.correct, date: Date.now()});
+
+  const isNewBest = score > (u.best || 0);
+  if (isNewBest) u.best = score;
+
+  u.quizDone = true;
+  u.quizDoneAt = Date.now();
+
+  const newBadges = [];
+  const badgeDefs = [
+    {id:'first', ico:'🌱', name:'Langkah Pertama', cond: () => true},
+    {id:'perfect', ico:'💯', name:'Sempurna', cond: () => score === 100},
+    {id:'smart', ico:'🧠', name:'Cerdas', cond: () => score >= 80},
+    {id:'good', ico:'⭐', name:'Bagus', cond: () => score >= 60},
+    {id:'persist', ico:'🔥', name:'Tekun', cond: () => (u.badges||[]).length >= 3},
+    {id:'master', ico:'👑', name:'Master Bohr', cond: () => score >= 100}
+  ];
+  badgeDefs.forEach(b => {
+    if (b.cond() && !u.badges.includes(b.id)) {
+      u.badges.push(b.id);
+      newBadges.push(b);
+    }
+  });
+
+  saveDB();
+  updateProfileUI();
+  renderLeaderboard();
+  updateQuizLockState();
+
+  const rc = document.getElementById('quizResult');
+  rc.style.display = 'block';
+  const emoji = pct === 100 ? '🏆' : pct >= 80 ? '🎉' : pct >= 60 ? '👍' : '💪';
+  const title = pct === 100 ? 'Sempurna!' : pct >= 80 ? 'Hebat!' : pct >= 60 ? 'Bagus!' : 'Terus Belajar!';
+
+  rc.innerHTML = `
+    <div class="card" style="text-align:center;">
+      <h2 style="justify-content:center;">${emoji} ${title}</h2>
+      <div class="result-circle" style="--p:${pct}%">
+        <div class="val">${score}</div>
+        <div class="lbl">POIN</div>
+      </div>
+      <div class="stat-grid">
+        <div class="stat-box"><div class="v">${quizState.correct}/10</div><div class="l">Benar</div></div>
+        <div class="stat-box"><div class="v">${pct}%</div><div class="l">Akurasi</div></div>
+      </div>
+      ${isNewBest ? '<p style="margin-top:12px;color:#ffd54f;font-weight:700;">🎊 Skor tersimpan!</p>' : ''}
+      ${newBadges.length ? '<p style="margin-top:12px;color:#4fc3f7;font-weight:700;">🎖️ Badge baru: ' + newBadges.map(b=>b.ico+' '+b.name).join(', ') + '</p>' : ''}
+      <div class="locked-box" style="margin-top:16px;">
+        <span class="lock-ico">🔒</span>
+        <h3>Kuis Selesai</h3>
+        <p>Kamu hanya dapat mengerjakan kuis <b>satu kali</b>. Skormu sudah tersimpan di peringkat.</p>
+      </div>
+      <div class="btn-row" style="margin-top:16px;">
+        <button class="btn secondary" onclick="resetQuizIntro()">Kembali</button>
+        <button class="btn" onclick="switchPage('rank', document.querySelector('#navSiswa button[data-page=\\'rank\\']'))">Lihat Peringkat</button>
+      </div>
+    </div>
+  `;
+  rc.scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+/* =========================================================
+   PROFILE & BADGES
+========================================================= */
+const BADGE_DEFS = [
+  {id:'first', ico:'🌱', name:'Langkah Pertama'},
+  {id:'good', ico:'⭐', name:'Bagus'},
+  {id:'smart', ico:'🧠', name:'Cerdas'},
+  {id:'perfect', ico:'💯', name:'Sempurna'},
+  {id:'persist', ico:'🔥', name:'Tekun'},
+  {id:'master', ico:'👑', name:'Master Bohr'}
+];
+
+function updateProfileUI() {
+  if (DB.currentTeacher) {
+    const t = DB.teachers[DB.currentTeacher];
+    if (!t) return;
+    document.getElementById('pAvatar').textContent = t.name.charAt(0).toUpperCase();
+    document.getElementById('pAvatar').classList.add('teacher');
+    document.getElementById('pName').textContent = t.name + ' (Guru)';
+    document.getElementById('pSub').textContent = 'Kode: ' + t.code;
+    document.getElementById('pBest').textContent = Object.keys(DB.users).filter(k => DB.users[k].quizDone).length;
+    document.getElementById('pTotal').textContent = Object.keys(DB.users).length;
+    document.getElementById('badgeGrid').innerHTML = '<p class="hint" style="grid-column:1/-1;text-align:center;">Badge hanya untuk siswa.</p>';
+    return;
+  }
+  const u = DB.users[DB.current];
+  if (!u) return;
+  document.getElementById('pAvatar').classList.remove('teacher');
+  document.getElementById('pAvatar').textContent = u.name.trim().charAt(0).toUpperCase();
+  document.getElementById('pName').textContent = u.name;
+  document.getElementById('pSub').textContent = `Kelas ${u.class} • Absen ${u.absen}`;
+  document.getElementById('pBest').textContent = u.best || 0;
+  document.getElementById('pTotal').textContent = u.total || 0;
+
+  const bg = document.getElementById('badgeGrid');
+  bg.innerHTML = BADGE_DEFS.map(b => {
+    const unlocked = (u.badges||[]).includes(b.id);
+    return `<div class="badge-item ${unlocked?'unlocked':''}">
+      <span class="b-ico">${b.ico}</span>
+      <span class="b-name">${b.name}</span>
+    </div>`;
+  }).join('');
+}
+
+/* =========================================================
+   LEADERBOARD
+========================================================= */
+function renderLeaderboard() {
+  const arr = Object.values(DB.users)
+    .filter(u => u.quizDone)
+    .sort((a,b) => (b.best||0) - (a.best||0));
+
+  const lb = document.getElementById('leaderboard');
+  if (!arr.length) {
+    lb.innerHTML = '<p class="hint" style="text-align:center;padding:20px 0;">Belum ada siswa yang menyelesaikan kuis.</p>';
+    return;
+  }
+
+  lb.innerHTML = arr.map((u, i) => {
+    const isMe = DB.current === userKey(u.name, u.class, u.absen);
+    const rankCls = i===0?'top1':i===1?'top2':i===2?'top3':'';
+    const medal = i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1);
+    return `<div class="lb-item ${isMe?'me':''}">
+      <div class="lb-rank ${rankCls}">${medal}</div>
+      <div class="lb-avatar">${u.name.charAt(0).toUpperCase()}</div>
+      <div class="lb-info">
+        <div class="lb-name">${escapeHtml(u.name)}${isMe?' (Kamu)':''}</div>
+        <div class="lb-sub">${u.class} • Absen ${u.absen}</div>
+      </div>
+      <div class="lb-score">${u.best||0}</div>
+    </div>`;
+  }).join('');
+}
+function escapeHtml(s) {
+  return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+/* =========================================================
+   TEACHER DASHBOARD
+========================================================= */
+let teacherFilter = 'ALL';
+
+function renderTeacherDashboard() {
+  const students = Object.values(DB.users);
+  const done = students.filter(s => s.quizDone);
+  const avg = done.length ? Math.round(done.reduce((a,b) => a + (b.best||0), 0) / done.length) : 0;
+
+  document.getElementById('sumTotal').textContent = students.length;
+  document.getElementById('sumDone').textContent = done.length;
+  document.getElementById('sumAvg').textContent = avg;
+
+  const t = DB.teachers[DB.currentTeacher];
+  if (t) {
+    document.getElementById('teacherNameDisplay').textContent = t.name;
+    document.getElementById('teacherCodeDisplay').textContent = t.code;
+  }
+
+  const filterEl = document.getElementById('classFilter');
+  const classes = ['ALL','XA','XB','XC','XD','XE','XF','XG','XH'];
+  filterEl.innerHTML = classes.map(c =>
+    `<button class="filter-btn ${teacherFilter===c?'active':''}" onclick="setTeacherFilter('${c}')">${c==='ALL'?'Semua':c}</button>`
+  ).join('');
+
+  const list = document.getElementById('studentList');
+  let filtered = students;
+  if (teacherFilter !== 'ALL') filtered = students.filter(s => s.class === teacherFilter);
+
+  filtered.sort((a,b) => {
+    if (a.quizDone !== b.quizDone) return a.quizDone ? 1 : -1;
+    return a.name.localeCompare(b.name);
+  });
+
+  if (!filtered.length) {
+    list.innerHTML = '<div class="empty-state"><span class="ico">📭</span>Belum ada siswa di kelas ini.</div>';
+    return;
+  }
+
+  list.innerHTML = filtered.map(s => {
+    const statusClass = s.quizDone ? 'done' : 'notdone';
+    const statusText = s.quizDone ? '✅ Sudah kuis' : '⏳ Belum kuis';
+    const doneDate = s.quizDoneAt ? new Date(s.quizDoneAt).toLocaleDateString('id-ID', {day:'numeric', month:'short', hour:'2-digit', minute:'2-digit'}) : '-';
+    const key = userKey(s.name, s.class, s.absen);
+    const keySafe = key.replace(/'/g, "\\'");
+    return `<div class="student-card ${statusClass}" id="sc-${keySafe}">
+      <div class="student-head">
+        <div class="student-avatar">${s.name.charAt(0).toUpperCase()}</div>
+        <div class="student-info">
+          <div class="student-name">${escapeHtml(s.name)}</div>
+          <div class="student-meta">${s.class} • Absen ${s.absen}</div>
+        </div>
+        <div style="font-size:0.65rem; color:#7986cb; text-align:right;">${statusText}</div>
+      </div>
+      <div class="student-stats">
+        <div class="student-stat"><b>${s.best||0}</b>Skor</div>
+        <div class="student-stat"><b>${s.quizDone?'1':'0'}</b>Kuis</div>
+        <div class="student-stat"><b>${s.badges ? s.badges.length : 0}</b>Badge</div>
+      </div>
+      ${s.quizDone ? `<div style="font-size:0.65rem; color:#7986cb; margin-top:6px; text-align:right;">Selesai: ${doneDate}</div>` : ''}
+      <div class="student-actions">
+        ${s.quizDone ? `<button class="btn-action reset" onclick="confirmResetStudent('${keySafe}')">🔄 Reset Kuis</button>` : ''}
+        <button class="btn-action delete" onclick="confirmDeleteStudent('${keySafe}')">🗑️ Hapus</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function setTeacherFilter(cls) {
+  teacherFilter = cls;
+  renderTeacherDashboard();
+}
+
+/* =========================================================
+   MODAL KONFIRMASI (hapus/reset)
+========================================================= */
+function openModal() {
+  document.getElementById('confirmModal').classList.add('show');
+}
+function closeModal() {
+  document.getElementById('confirmModal').classList.remove('show');
+}
+
+function confirmDeleteStudent(key) {
+  const u = DB.users[key];
+  if (!u) return;
+
+  document.getElementById('modalTitle').innerHTML = '🗑️ Hapus Murid';
+  document.getElementById('modalTarget').style.display = 'block';
+  document.getElementById('modalStudentName').textContent = u.name;
+  document.getElementById('modalStudentMeta').textContent = `${u.class} • Absen ${u.absen} • Skor ${u.best||0}`;
+  document.getElementById('modalMessage').innerHTML = 'Data siswa ini akan dihapus permanen. Apakah Anda yakin?';
+  const btn = document.getElementById('modalConfirmBtn');
+  btn.textContent = 'Ya, Hapus';
+  btn.className = 'modal-confirm';
+  btn.onclick = () => {
+    deleteStudent(key);
+    closeModal();
+  };
+  openModal();
+}
+
+function deleteStudent(key) {
+  const u = DB.users[key];
+  if (!u) return;
+  const name = u.name;
+
+  const card = document.getElementById('sc-' + key.replace(/'/g, "\\'"));
+  if (card) card.classList.add('removing');
+
+  setTimeout(() => {
+    delete DB.users[key];
+    if (DB.current === key) DB.current = null;
+    saveDB();
+    renderTeacherDashboard();
+    renderLeaderboard();
+    toast('✅ Siswa "' + name + '" berhasil dihapus', 'success');
+  }, 280);
+}
+
+function confirmResetStudent(key) {
+  const u = DB.users[key];
+  if (!u) return;
+
+  document.getElementById('modalTitle').innerHTML = '🔄 Reset Kuis';
+  document.getElementById('modalTarget').style.display = 'block';
+  document.getElementById('modalStudentName').textContent = u.name;
+  document.getElementById('modalStudentMeta').textContent = `${u.class} • Absen ${u.absen} • Skor ${u.best||0}`;
+  document.getElementById('modalMessage').innerHTML = 'Siswa ini akan diizinkan <b>mengerjakan kuis sekali lagi</b>. Skor lama akan diganti setelah kuis baru. Lanjutkan?';
+  const btn = document.getElementById('modalConfirmBtn');
+  btn.textContent = 'Ya, Reset';
+  btn.className = 'modal-confirm warn';
+  btn.onclick = () => {
+    resetStudent(key);
+    closeModal();
+  };
+  openModal();
+}
+
+function resetStudent(key) {
+  const u = DB.users[key];
+  if (!u) return;
+  u.quizDone = false;
+  u.quizDoneAt = null;
+  saveDB();
+  renderTeacherDashboard();
+  renderLeaderboard();
+  toast('🔄 Kuis "' + u.name + '" di-reset. Siswa bisa mengerjakan lagi.', 'success');
+}
+
+function confirmDeleteAll() {
+  const total = Object.keys(DB.users).length;
+  if (total === 0) return toast('Tidak ada data siswa untuk dihapus', 'error');
+
+  document.getElementById('modalTitle').innerHTML = '⚠️ Hapus Semua Data';
+  document.getElementById('modalTarget').style.display = 'none';
+  document.getElementById('modalMessage').innerHTML = `<b>${total} siswa</b> akan dihapus permanen, termasuk skor, badge, dan riwayat. Tindakan ini <b>tidak dapat dibatalkan</b>!`;
+  const btn = document.getElementById('modalConfirmBtn');
+  btn.textContent = 'Ya, Hapus Semua';
+  btn.className = 'modal-confirm';
+  btn.onclick = () => {
+    DB.users = {};
+    DB.current = null;
+    saveDB();
+    renderTeacherDashboard();
+    renderLeaderboard();
+    closeModal();
+    toast('✅ Semua data siswa berhasil dihapus', 'success');
+  };
+  openModal();
+}
+
+/* =========================================================
+   UBAH KODE GURU
+========================================================= */
+function openChangeCodeModal() {
+  const t = DB.teachers[DB.currentTeacher];
+  if (!t) return;
+  document.getElementById('inpOldCode').value = '';
+  document.getElementById('inpNewCode').value = '';
+  document.getElementById('inpNewCode2').value = '';
+  document.getElementById('changeCodeModal').classList.add('show');
+}
+function closeChangeCodeModal() {
+  document.getElementById('changeCodeModal').classList.remove('show');
+}
+function submitChangeCode() {
+  const t = DB.teachers[DB.currentTeacher];
+  if (!t) return;
+
+  const oldCode = document.getElementById('inpOldCode').value.trim().toUpperCase();
+  const newCode = document.getElementById('inpNewCode').value.trim().toUpperCase();
+  const newCode2 = document.getElementById('inpNewCode2').value.trim().toUpperCase();
+
+  if (!oldCode) return toast('Kode saat ini tidak boleh kosong', 'error');
+  if (!newCode) return toast('Kode baru tidak boleh kosong', 'error');
+  if (newCode.length < 2) return toast('Kode baru minimal 2 karakter', 'error');
+  if (newCode.length > 6) return toast('Kode baru maksimal 6 karakter', 'error');
+  if (newCode !== newCode2) return toast('Konfirmasi kode tidak cocok', 'error');
+  if (oldCode !== t.code.toUpperCase()) return toast('❌ Kode saat ini salah', 'error');
+  if (newCode === oldCode) return toast('Kode baru sama dengan kode lama', 'error');
+
+  // Cek apakah kode baru sudah dipakai guru lain
+  const taken = Object.entries(DB.teachers).some(([k, v]) =>
+    k !== DB.currentTeacher && v.code.toUpperCase() === newCode
+  );
+  if (taken) return toast('❌ Kode "' + newCode + '" sudah dipakai guru lain', 'error');
+
+  // Simpan
+  t.code = newCode;
+  saveDB();
+  closeChangeCodeModal();
+  renderTeacherDashboard();
+  updateProfileUI();
+  toast('✅ Kode guru berhasil diubah menjadi: ' + newCode, 'success');
+}
+
+/* =========================================================
+   INIT
+========================================================= */
+window.addEventListener('DOMContentLoaded', () => {
+  loadDB();
+  init3D();
+
+  if (DB.currentTeacher && DB.teachers[DB.currentTeacher]) {
+    enterApp('guru');
+  } else if (DB.current && DB.users[DB.current]) {
+    enterApp('siswa');
+  } else {
+    document.getElementById('app').style.display = 'none';
+  }
+
+  ['inpName','inpClass','inpAbsen'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('keydown', e => { if (e.key === 'Enter') doLoginSiswa(); });
+  });
+  ['inpTeacherName','inpTeacherCode'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('keydown', e => { if (e.key === 'Enter') doLoginGuru(); });
+  });
+
+  document.getElementById('confirmModal').addEventListener('click', (e) => {
+    if (e.target.id === 'confirmModal') closeModal();
+  });
+  document.getElementById('logoutModal').addEventListener('click', (e) => {
+    if (e.target.id === 'logoutModal') closeLogoutModal();
+  });
+  document.getElementById('changeCodeModal').addEventListener('click', (e) => {
+    if (e.target.id === 'changeCodeModal') closeChangeCodeModal();
+  });
+});
+</script>
+</body>
+</html>
